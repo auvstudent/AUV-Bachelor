@@ -1,8 +1,9 @@
-import pygame
+import pygame, sys
 import glob, os
 import peder
 import time
 import pygame_chart as pyc
+import pandas as pd
 # variables
 running = True
 pltScreen = [[800,360],[360,360]]
@@ -38,10 +39,9 @@ font = pygame.font.Font('freesansbold.ttf', 12)
 meny = peder.plot(logfil,pltScreen,offset)
 menue = peder.menue("menue")
 
-
+counter = 0
 #draw plots
-figure = pyc.Figure(screen, offset, offset, 360, 360)
-figure.line('Chart1', [1,2,3,4,6,20,24],[3,5,7,2,7,9,1])
+
 
 while running:
     # poll for events
@@ -52,17 +52,72 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 menue.location = "menue"
+                menue.file_select = 0
     
     if menue.location == "menue":
         screen.fill("white")
-        menue.get_pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed())
+        menue.get_pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
         
         screen.blit(menue.option1[0],menue.option1[1])
         screen.blit(menue.option2[0],menue.option2[1])
+        if menue.file_select == 1:
+            pygame.draw.line(screen, (0,0,0),(250,0),(250,600), width=3)
+            for i in menue.log_fil:
+                screen.blit(i[0],i[1])
+        
+        
+    
         
     elif menue.location == "mission plot":
+        global mission
+        mission = peder.mission_Plot(menue.file_Selected)
+        
+        figure = pyc.Figure(screen, offset+200, offset, 360, 360)
+        
+        
+        
+        #figure2 = pyc.Figure(screen, offset+600, offset, 360, 360)
+        #figure.line('Chart1', mission.plot_time ,mission.data)
+        
+        #figure.line('Chart2', [0,1,2] ,[1,1,1])
+        #figure2.line('Chart2', [0,1,2] ,[0,1,2])
+        
+        menue.location = "mission plot start"
+        
+    elif menue.location == "mission plot start":
+        plot = 0
         screen.fill("white")
-        figure.draw()
+        mission.get_pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
+        if mission.toggle == 1:
+            figure = pyc.Figure(screen, offset+200, offset, 360, 360)
+            mission.toggle = 0
+        
+        
+        
+        for i in range(len(mission.option_text)):
+            pygame.draw.rect(screen, (0,0,0), pygame.Rect(35,33+30*i,12,12))
+            pygame.draw.rect(screen, (255,255,255), pygame.Rect(36,34+30*i,10,10))
+            if mission.plot_points[i][1] == 1:
+                pygame.draw.rect(screen, (0,255,0), pygame.Rect(35,33+30*i,12,12))
+            screen.blit(mission.option_text[i][0],mission.option_text[i][1])
+            
+        for i in range(len(mission.plot_points)):
+            if mission.plot_points[i][1] == 1:
+                plot = 1
+        if plot == 1:
+            
+            for i in range(len(mission.plot_points)):
+                if mission.plot_points[i][1] == 1:
+
+                    figure.line(str(i), mission.plot_time ,mission.data[i])
+            
+            figure.draw()
+
+            
+            
+            
+        
+        #figure2.draw()
         
     elif menue.location == "live plot":
         
@@ -90,6 +145,8 @@ while running:
         
         meny.move_plot()
     pygame.display.flip()
+    
     clock.tick(fps)  # limits FPS
 
 pygame.quit()
+sys.exit()
