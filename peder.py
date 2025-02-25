@@ -3,9 +3,17 @@ import tkinter
 from tkinter import filedialog
 import glob, os
 import pandas as pd
-import pygame_chart as pyc
+import time
 
-class plot():
+def text(skrift,x,y,z,color):
+    font2 = pygame.font.Font('freesansbold.ttf', z)
+    text = font2.render(skrift, True, color)
+    textRect = text.get_rect()
+    textRect.center = (x+textRect[2]/2, y+textRect[3]/2)
+    ret = (text,textRect)
+    return ret
+
+class plot:
     def __init__(self,logfil,pltScreen,offset):
         self.options = [["Live plot"],["Plot mission"]]
         self.logfil = logfil
@@ -71,7 +79,8 @@ class plot():
         self.plt2_lines = [dC*1,dC*2,dC*3,dC*4,dC*5]
   
 class menue:
-    def __init__(self,location):
+    def __init__(self,location,folder):
+        self.folder_path = folder
         self.location = location
         self.file_select = 0
 
@@ -94,7 +103,7 @@ class menue:
     def get_pos(self,pos,click):
         
         self.option1 = self.mtext("Live plot",20,50,30,"black")
-        self.option2 = self.mtext("Mission plot",20,100,30,"black")
+        self.option2 = self.mtext("Mission data",20,100,30,"black")
         
         if self.option1[1][0] <= pos[0] <= self.option1[1][0]+self.option1[1][2] and self.option1[1][1] <= pos[1] <= self.option1[1][1]+self.option1[1][3]:
             self.option1 = self.mtext("Live plot",20,50,30,"green")
@@ -102,7 +111,7 @@ class menue:
                 self.location = "live plot"
         elif self.option2[1][0] <= pos[0] <= self.option2[1][0]+self.option2[1][2] and self.option2[1][1] <= pos[1] <= self.option2[1][1]+self.option2[1][3]:
             
-            self.option2 = self.mtext("Mission plot",20,100,30,"green")
+            self.option2 = self.mtext("Mission data",20,100,30,"green")
             if click == True:
                 self.got = 0
                 self.get_files()
@@ -126,8 +135,6 @@ class menue:
         self.log_fil = []
         
         if self.got == 0:
-            tkinter.Tk().withdraw() # prevents an empty tkinter window from appearing
-            self.folder_path = filedialog.askdirectory()
             os.chdir(self.folder_path)
             self.got = 1
         
@@ -140,7 +147,6 @@ class menue:
                 self.log_fil.append(self.mtext(str(self.filer[i]),260,50+50*i,30,"black"))
         self.select = 0
         
-
 class mission_Plot:
     def __init__(self,file):
         self.file = file
@@ -150,7 +156,7 @@ class mission_Plot:
         self.flight_time = self.df["flightTime"].tolist()
         self.missions = []
         self.detect_arm()
-        self.plot_points = [["roll",-1],["pitch",-1],["heading",-1]]
+        self.plot_points = [["roll",-1],["pitch",-1],["heading",-1],["groundSpeed",-1]]
         self.toggle = 0
         
         self.plot()
@@ -184,12 +190,12 @@ class mission_Plot:
     def menue(self):
         self.option_text = []
         for i in range(len(self.plot_points)):
-            self.option_text.append(self.mtext(self.plot_points[i][0],50,30+30*i,20,"black"))
+            self.option_text.append(self.mtext(self.plot_points[i][0],50,30+40*i,30,"black"))
             
-    def get_pos(self,pos,click):
+    def get_pos(self,pos,click):#26,36+40*i,18,18
         if self.delay <= 0:
             for i in range(len(self.plot_points)):
-                if 35 <= pos[0] <= 35+12 and 33+30*i <= pos[1] <= 33+30*i+12 :
+                if 25 <= pos[0] <= 25+20 and 35+40*i <= pos[1] <= 35+40*i+20 :
                     if click == True:
                         self.toggle = 1
                         self.plot_points[i][1] *= -1 
@@ -197,10 +203,53 @@ class mission_Plot:
         else:
             self.delay -= 1
 
-                    
+class save_file:
+    def __init__(self): 
+        self.save_exist = 0
+        self.path = str(__file__[:-8])+"savefile.txt"
+        f = open(self.path, "a")
+        f.close()
+        f = open(self.path, "r")
+        self.save_read = f.read()
+        f.close()
+        f.close()
+        self.read_savefile()
+        
+    def read_savefile(self):
+        self.save = []
+        temp = []
+        counter = 0
+        save_exist = 0
+        if self.save_read == "":
+
+            tkinter.Tk().withdraw()
+            self.folder_path = filedialog.askdirectory()
+            time.sleep(1)
+            self.save.append([1,self.folder_path])
             
+        for i in range(len(self.save_read)):
+            if self.save_read[i] == ",":
+                temp.append(self.save_read[counter:i])
+                counter = i+1
+                save_exist = 1
+            elif self.save_read[i] == ";":
+                temp.append(self.save_read[counter:i])
+                save_exist = 1
+        if save_exist == 1:
+            self.save_exist = 1
+            if int(temp[0]) == 1:
+                self.save.append([1,temp[1]])
         
-        
+    def write_save(self):
+        f = open(self.path, "w")
+        for i in range(len(self.save)):
+            f.write(str(self.save[i][0]))
+            f.write(",")
+            f.write(self.save[i][1])
+            f.write(";")
+        f.close()
+        f.close()
+        print("done")
 
             
             
