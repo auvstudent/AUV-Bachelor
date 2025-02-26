@@ -25,6 +25,7 @@ os.chdir(logfil)
 pygame.init()
 screen = pygame.display.set_mode(display)
 clock = pygame.time.Clock()
+pygame.display.set_caption("AUV plot") 
 while True:#find last log file
     
     for file in glob.glob("*.csv"):
@@ -45,7 +46,7 @@ menue = peder.menue("menue",save_file.save[0][1])
 
 counter = 0
 ping = 0
-
+settings = peder.settings()
 
 
 while running: # start of main code
@@ -66,6 +67,7 @@ while running: # start of main code
         
         screen.blit(menue.option1[0],menue.option1[1])
         screen.blit(menue.option2[0],menue.option2[1])
+        screen.blit(menue.option3[0],menue.option3[1])
         if menue.file_select == 1:
             pygame.draw.line(screen, (0,0,0),(250,0),(250,600), width=3)
             for i in menue.log_fil:
@@ -140,7 +142,7 @@ while running: # start of main code
             figure1 = pyc.Figure(screen, offset+300, offset, 360, 360)
             figure2 = pyc.Figure(screen, offset+300+360, offset, 360, 360)
             figure3 = pyc.Figure(screen, offset+300, offset+360, 360, 360)
-            figure1.set_ylim((-180,180))
+            figure1.set_ylim((settings.roll_pitch[1][0],settings.roll_pitch[1][1]))
             figure2.set_ylim((0,360))
             figure3.set_ylim((-10,10))
             plts = [0,0,0]
@@ -230,9 +232,6 @@ while running: # start of main code
 
             mission.save = 0
                 
-                
-            
-            
     elif menue.location == "live plot":
         
         if counter >= fps:
@@ -259,6 +258,9 @@ while running: # start of main code
             pygame.draw.line(screen, (0,0,255), (meny.pltScreenStart[1][0]+meny.pltH[i][0], meny.pltScreenStart[1][1]+meny.pltH[i][1]), (meny.pltScreenStart[1][0]+meny.pltH[i+1][0], meny.pltScreenStart[1][1]+meny.pltH[i+1][1]), width=1)
         
         meny.move_plot()
+    
+    elif menue.location == "settings":
+        screen.fill("white")
     
     pygame.display.flip()
     end = time.time()

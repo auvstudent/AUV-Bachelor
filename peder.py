@@ -86,6 +86,7 @@ class menue:
         
         self.option1 = self.mtext("Live plot",10,50,30,"black")
         self.option2 = self.mtext("Mission plot",10,100,30,"black")
+        self.option3 = self.mtext("Settings",20,150,30,"black")
         self.select = 0
         self.got = 0
         self.file_Selected = ""
@@ -103,6 +104,7 @@ class menue:
         
         self.option1 = self.mtext("Live plot",20,50,30,"black")
         self.option2 = self.mtext("Mission data",20,100,30,"black")
+        self.option3 = self.mtext("Settings",20,150,30,"black")
         
         if self.option1[1][0] <= pos[0] <= self.option1[1][0]+self.option1[1][2] and self.option1[1][1] <= pos[1] <= self.option1[1][1]+self.option1[1][3]:
             self.option1 = self.mtext("Live plot",20,50,30,"green")
@@ -115,6 +117,11 @@ class menue:
                 self.got = 0
                 self.get_files()
                 self.file_select = 1
+                
+        elif self.option3[1][0] <= pos[0] <= self.option3[1][0]+self.option3[1][2] and self.option3[1][1] <= pos[1] <= self.option3[1][1]+self.option3[1][3]:
+            self.option3 = self.mtext("Settings",20,150,30,"green")
+            if click == True:
+                self.location = "settings"
                 
         if self.file_select == 1:
             for i in range(len(self.log_fil)):
@@ -208,7 +215,7 @@ class mission_Plot:
 class save_file:
     def __init__(self): 
         self.save_exist = 0
-        self.path = str(__file__[:-8])+"savefile.txt"
+        self.path = str(__file__[:-8])+"/savefile.txt"
         f = open(self.path, "a")
         f.close()
         f = open(self.path, "r")
@@ -253,5 +260,66 @@ class save_file:
         f.close()
         print("done")
 
-            
-            
+class settings:
+    def __init__(self):
+        self.path = str(__file__[:-8])+"/settings.txt"
+        f = open(self.path, "a")
+        f.close()
+        f = open(self.path, "r")
+        self.save_settings = f.read()
+        f.close()
+        f.close()
+        self.read_settings()
+    def read_settings(self):
+        a = 0
+        temp = []
+        ttemp = []
+        temp_data = []
+        temp_data_start = 0
+        for i in range(len(self.save_settings)):
+            if self.save_settings[i] == ":":
+                ttemp.append(self.save_settings[a:i])
+                a = i+1
+                
+            elif self.save_settings[i] == "[":
+                temp_data_start = i+1
+                
+            elif self.save_settings[i] == ",":
+                temp_data.append(int(self.save_settings[temp_data_start:i]))
+                temp_data_start = i+1
+                
+            elif self.save_settings[i] == "]":
+                temp_data.append(int(self.save_settings[temp_data_start:i]))
+                ttemp.append(temp_data)
+                temp_data = []
+            elif self.save_settings[i] == ";":
+                temp.append(ttemp)
+                ttemp = []
+                a = i+1
+                
+        self.roll_pitch = [temp[0][0],temp[0][1]]
+        self.heading = [temp[1][0],temp[1][1]]
+        self.speed = [temp[2][0],temp[2][1]]
+        
+    def first_start(self):
+        self.roll_pitch = ["roll_pitch",[-180,180]]
+        self.heading = ["heading",[0,360]]
+        self.speed = ["speed",[-10,10]]
+        
+    def save_to_file(self):
+        f = open(self.path,"w")
+        temp = [self.roll_pitch,self.heading,self.speed]
+
+        for i in temp:
+            f.write(str(i[0]))
+            f.write(":")
+            f.write(str(i[1]))
+            f.write(";")
+        
+
+        
+        f.close()
+        f.close()
+    
+        
+    
