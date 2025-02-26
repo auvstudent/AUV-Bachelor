@@ -15,7 +15,6 @@ def text(skrift,x,y,z,color):
 
 class plot:
     def __init__(self,logfil,pltScreen,offset):
-        self.options = [["Live plot"],["Plot mission"]]
         self.logfil = logfil
         self.pltScreen = pltScreen
         self.pltScreenStart = [[offset,offset],[offset*2+self.pltScreen[0][0],offset]]
@@ -148,7 +147,7 @@ class menue:
         self.select = 0
         
 class mission_Plot:
-    def __init__(self,file):
+    def __init__(self,file,display):
         self.file = file
         self.options = [0,0,0]
         self.df = pd.read_csv(self.file,sep="," )
@@ -158,7 +157,8 @@ class mission_Plot:
         self.detect_arm()
         self.plot_points = [["roll",-1],["pitch",-1],["heading",-1],["groundSpeed",-1]]
         self.toggle = 0
-        
+        self.display = display
+        self.save = 0
         self.plot()
         self.menue()
         
@@ -202,6 +202,8 @@ class mission_Plot:
                         self.delay = 5
         else:
             self.delay -= 1
+        if 19 <= pos[0] <= 19+22 and self.display[1]-41 <= pos[1] <= self.display[1]-41+22 :
+            self.save = 1
 
 class save_file:
     def __init__(self): 
