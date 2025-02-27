@@ -6,62 +6,46 @@ import pygame_chart as pyc
 import tkinter
 from tkinter import filedialog
 
-#variables for initialising
-
-#initialising
-
-#other variables
-
-
-
-
-
-
-
-
-
-# variables
-save_file = peder.save_file()
-running = True
-pltScreen = [[800,360],[360,360]]
-display = (1224,800)
-text = [((30,400),(255,0,0),"Pitch: "),((130,400),(255,255,0),"Roll: "),((230,400),(0,0,255),"Heading: ")]
-counter = 0
-logfil = save_file.save[0][1]
-
-filer = []
-fps = 24
-offset = 10
-
-
-# setup
-os.chdir(logfil)
-pygame.init()
-screen = pygame.display.set_mode(display)
-clock = pygame.time.Clock()
-pygame.display.set_caption("AUV plot") 
-while True:#find last log file
+if True:
+    save_file = peder.save_file()
+    logfil = save_file.save[0][1]
+    os.chdir(logfil)
     
-    for file in glob.glob("*.csv"):
-        filer.append(file)
-    if len(filer) >= 1:
-        break
-    else:
-        print(filer)
-        time.sleep(1)
-
-logfil = logfil+"/"+filer[-1]
-
-
-font = pygame.font.Font('freesansbold.ttf', 12)
-meny = peder.plot(logfil,pltScreen,offset)
-menue = peder.menue("menue",save_file.save[0][1])
-
-
-counter = 0
-ping = 0
-settings = peder.settings()
-
+    #variables for initialising
+    display = (1224,800)
+    filer = []
+    pltScreen = [[800,360],[360,360]]
+    offset = 10
+    
+    while True:#find last log file
+        for file in glob.glob("*.csv"):
+            filer.append(file)
+        if len(filer) >= 1:
+            break
+        else:
+            print(filer)
+            time.sleep(1)
+            
+    logfil = logfil+"/"+filer[-1]
+    
+    #initialising
+    
+    pygame.init()
+    screen = pygame.display.set_mode(display)
+    clock = pygame.time.Clock()
+    pygame.display.set_caption("AUV plot") 
+    meny = peder.plot(logfil,pltScreen,offset)
+    menue = peder.menue("menue",save_file.save[0][1])
+    settings = peder.settings()
+    
+    #other variables
+    running = True
+    text = [((30,400),(255,0,0),"Pitch: "),((130,400),(255,255,0),"Roll: "),((230,400),(0,0,255),"Heading: ")]
+    counter = 0
+    fps = 24
+    font = pygame.font.Font('freesansbold.ttf', 12)
+    counter = 0
+    ping = 0
 
 while running: # start of main code
     # poll for events (userinputs)
@@ -274,7 +258,6 @@ while running: # start of main code
     pygame.display.flip()
     end = time.time()
     ping = int((end-start)/(1/fps)*100)/100
-    print(ping)
     clock.tick(fps)  # limits FPS
     
     
