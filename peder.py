@@ -87,6 +87,7 @@ class menue:
         self.option1 = self.mtext("Live plot",10,50,30,"black")
         self.option2 = self.mtext("Mission plot",10,100,30,"black")
         self.option3 = self.mtext("Settings",20,150,30,"black")
+        self.option4 = self.mtext("Test",20,200,30,"black")
         self.select = 0
         self.got = 0
         self.file_Selected = ""
@@ -105,6 +106,7 @@ class menue:
         self.option1 = self.mtext("Live plot",20,50,30,"black")
         self.option2 = self.mtext("Mission data",20,100,30,"black")
         self.option3 = self.mtext("Settings",20,150,30,"black")
+        self.option4 = self.mtext("Test",20,200,30,"black")
         
         if self.option1[1][0] <= pos[0] <= self.option1[1][0]+self.option1[1][2] and self.option1[1][1] <= pos[1] <= self.option1[1][1]+self.option1[1][3]:
             self.option1 = self.mtext("Live plot",20,50,30,"green")
@@ -122,6 +124,11 @@ class menue:
             self.option3 = self.mtext("Settings",20,150,30,"green")
             if click == True:
                 self.location = "settings"
+        
+        elif self.option4[1][0] <= pos[0] <= self.option4[1][0]+self.option4[1][2] and self.option4[1][1] <= pos[1] <= self.option4[1][1]+self.option4[1][3]:
+            self.option4 = self.mtext("Test",20,200,30,"green")
+            if click == True:
+                self.location = "test"
                 
         if self.file_select == 1:
             for i in range(len(self.log_fil)):

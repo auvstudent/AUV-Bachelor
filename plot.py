@@ -3,9 +3,23 @@ import glob, os
 import peder
 import time
 import pygame_chart as pyc
-import pandas as pd
 import tkinter
 from tkinter import filedialog
+
+#variables for initialising
+
+#initialising
+
+#other variables
+
+
+
+
+
+
+
+
+
 # variables
 save_file = peder.save_file()
 running = True
@@ -68,6 +82,7 @@ while running: # start of main code
         screen.blit(menue.option1[0],menue.option1[1])
         screen.blit(menue.option2[0],menue.option2[1])
         screen.blit(menue.option3[0],menue.option3[1])
+        screen.blit(menue.option4[0],menue.option4[1])
         if menue.file_select == 1:
             pygame.draw.line(screen, (0,0,0),(250,0),(250,600), width=3)
             for i in menue.log_fil:
@@ -76,23 +91,14 @@ while running: # start of main code
     elif menue.location == "mission plot":# initialising plotting of missions
         draw = 0
         global mission
+        figure1 = 0
+        figure2 = 0
+        figure3 = 0
         mission = peder.mission_Plot(menue.file_Selected,display)
-        
-        figure = pyc.Figure(screen, offset+200, offset, 360, 360)
-        
-        
-        
-        #figure2 = pyc.Figure(screen, offset+600, offset, 360, 360)
-        #figure.line('Chart1', mission.plot_time ,mission.data)
-        
-        #figure.line('Chart2', [0,1,2] ,[1,1,1])
-        #figure2.line('Chart2', [0,1,2] ,[0,1,2])
         
         menue.location = "mission plot start"
         screen.fill("white")
-        figure1 = pyc.Figure(screen, offset+200, offset, 360, 360)
-        figure2 = pyc.Figure(screen, offset+200+360, offset, 360, 360)
-        figure3 = pyc.Figure(screen, offset+200, offset+360, 360, 360)
+
         plts = [0,0,0]
         
         for i in range(len(mission.option_text)): #plot poitns text
@@ -262,9 +268,13 @@ while running: # start of main code
     elif menue.location == "settings":
         screen.fill("white")
     
+    elif menue.location == "test":
+        screen.fill("red")
+    
     pygame.display.flip()
     end = time.time()
     ping = int((end-start)/(1/fps)*100)/100
+    print(ping)
     clock.tick(fps)  # limits FPS
     
     
