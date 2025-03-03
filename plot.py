@@ -23,7 +23,7 @@ if True:
         if len(filer) >= 1:
             break
         else:
-            print(filer)
+            print("no log file available")
             time.sleep(1)
             
     logfil = logfil+"/"+filer[-1]
@@ -37,6 +37,7 @@ if True:
     meny = peder.plot(logfil,pltScreen,offset)
     menue = peder.menue("menue",save_file.save[0][1])
     settings = peder.settings()
+    sprites = peder.sprites()
     
     #other variables
     running = True
@@ -47,19 +48,26 @@ if True:
     counter = 0
     ping = 0
 
-while running: # start of main code
-    # poll for events (userinputs)
-    start = time.time()#time execution time
+def polling():
+    global running
+    global counter
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+            menue.location = "quit"
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 menue.location = "menue"
                 menue.file_select = 0
                 counter = 0
+                
+while running: # start of main code
+    # poll for events (userinputs)
+    start = time.time()#time execution time
+    polling()
     
-    if menue.location == "menue": #start menue
+    while menue.location == "menue": #start menue
+        polling()
         screen.fill("white")
         menue.get_pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
         
@@ -71,8 +79,11 @@ while running: # start of main code
             pygame.draw.line(screen, (0,0,0),(250,0),(250,600), width=3)
             for i in menue.log_fil:
                 screen.blit(i[0],i[1])
+        pygame.display.flip()
+        clock.tick(fps)
         
-    elif menue.location == "mission plot":# initialising plotting of missions
+    while menue.location == "mission plot":# initialising plotting of missions
+        polling()
         draw = 0
         global mission
         figure1 = 0
@@ -91,8 +102,11 @@ while running: # start of main code
             if mission.plot_points[i][1] == 1:
                 pygame.draw.rect(screen, (0,255,0), pygame.Rect(25,35+40*i,20,20))
             screen.blit(mission.option_text[i][0],mission.option_text[i][1])
+        pygame.display.flip()
+        clock.tick(fps)
              
-    elif menue.location == "mission plot start": #plot past missions
+    while menue.location == "mission plot start": #plot past missions
+        polling()
         save_text = peder.text("save plots",45,display[1]-45,30,"black")
         
         plot = 0# flagg to see if plots change
@@ -133,8 +147,8 @@ while running: # start of main code
             figure2 = pyc.Figure(screen, offset+300+360, offset, 360, 360)
             figure3 = pyc.Figure(screen, offset+300, offset+360, 360, 360)
             figure1.set_ylim((settings.roll_pitch[1][0],settings.roll_pitch[1][1]))
-            figure2.set_ylim((0,360))
-            figure3.set_ylim((-10,10))
+            figure2.set_ylim((settings.heading[1][0],settings.heading[1][1]))
+            figure3.set_ylim((settings.speed[1][0],settings.speed[1][1]))
             plts = [0,0,0]
             for i in range(len(mission.option_text)): #plot poitns text
                 pygame.draw.rect(screen, (0,0,0), pygame.Rect(25,35+40*i,20,20))
@@ -173,9 +187,9 @@ while running: # start of main code
                 plot_fig2 = pyc.Figure(plot_save2, 0, 40, 360, 360)
                 plot_fig3 = pyc.Figure(plot_save3, 0, 40, 360, 360)
                 
-                plot_fig1.set_ylim((-180,180))
-                plot_fig2.set_ylim((0,360))
-                plot_fig3.set_ylim((-10,10))
+                plot_fig1.set_ylim((settings.roll_pitch[1][0],settings.roll_pitch[1][1]))
+                plot_fig2.set_ylim((settings.heading[1][0],settings.heading[1][1]))
+                plot_fig3.set_ylim((settings.speed[1][0],settings.speed[1][1]))
                 
                 for i in range(len(mission.plot_points)):#if any plot poitns are to be drawn draw them
                     if mission.plot_points[i][1] == 1:
@@ -221,9 +235,11 @@ while running: # start of main code
                 
 
             mission.save = 0
+        pygame.display.flip()
+        clock.tick(fps)
                 
-    elif menue.location == "live plot":
-        
+    while menue.location == "live plot":
+        polling()
         if counter >= fps:
             meny.get_lastline()
             meny.add_plt()
@@ -248,13 +264,41 @@ while running: # start of main code
             pygame.draw.line(screen, (0,0,255), (meny.pltScreenStart[1][0]+meny.pltH[i][0], meny.pltScreenStart[1][1]+meny.pltH[i][1]), (meny.pltScreenStart[1][0]+meny.pltH[i+1][0], meny.pltScreenStart[1][1]+meny.pltH[i+1][1]), width=1)
         
         meny.move_plot()
+        pygame.display.flip()
+        clock.tick(fps)
     
-    elif menue.location == "settings":
+    while menue.location == "settings":
         screen.fill("white")
-    
-    elif menue.location == "test":
+        settings.menue()
+        temp = []
+        text = []
+        temp.append(str(settings.roll_pitch[1][1]))
+        temp.append(str(settings.heading[1][1]))
+        temp.append(str(settings.speed[1][1]))
+        
+        for i in range(len(temp)):
+            text.append(peder.text(temp[i], settings.boxes[0][0]+70, settings.boxes[0][1]+40*i, 30, "black"))
+            
+        for i in text:
+            screen.blit(i[0],i[1])
+        for i in settings.option_text:
+            screen.blit(i[0],i[1])
+        for i in range(len(settings.option_text)):
+            pygame.draw.line(screen, (100,100,100),(0,64+40*i),(400,64+40*i), width=3)
+            screen.blit(sprites.plus,(settings.boxes[0][0],settings.boxes[0][1]+40*i))
+            screen.blit(sprites.minus,(settings.boxes[1][0],settings.boxes[1][1]+40*i))
+            
+        settings.pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
+        polling()
+        pygame.display.flip()
+        clock.tick(fps)
+        
+    while menue.location == "test":
         screen.fill("red")
-    
+        polling()
+        pygame.display.flip()
+        clock.tick(fps)
+        
     pygame.display.flip()
     end = time.time()
     ping = int((end-start)/(1/fps)*100)/100

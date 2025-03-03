@@ -269,6 +269,14 @@ class save_file:
 
 class settings:
     def __init__(self):
+        self.roll_pitch = None
+        self.heading = None
+        self.speed  = None
+        self.boxes = [[250,35],[280,35]]
+        self.upp = [0,0]
+        self.delay = 0
+        self.hold = 0
+        
         self.path = str(__file__[:-8])+"/settings.txt"
         f = open(self.path, "a")
         f.close()
@@ -322,11 +330,70 @@ class settings:
             f.write(":")
             f.write(str(i[1]))
             f.write(";")
-        
+    
 
         
         f.close()
         f.close()
     
-        
+    def menue(self):
+        self.option_text = []
+        self.config = [self.roll_pitch,self.heading,self.speed]
+        for i in range(len(self.config)):
+            self.option_text.append(text(self.config[i][0],50,30+40*i,30,"black"))    
     
+    def pos(self,pos,click):
+        if self.delay <= 0:
+            for i in range(3):
+                if self.boxes[0][0]<pos[0]<self.boxes[0][0]+20 and self.boxes[0][1]+i*40<pos[1]<self.boxes[0][1]+20+i*40:
+                    if click == True:
+                        self.delay = 3
+                        self.upp = [i,1]
+                        self.uppdate(click)
+                        break
+                        
+                elif self.boxes[1][0]<pos[0]<self.boxes[1][0]+20 and self.boxes[1][1]+i*40<pos[1]<self.boxes[1][1]+20+i*40:
+                    if click == True:
+                        self.delay = 3
+                        self.upp = [i,-1]
+                        self.uppdate(click)
+                        break
+        else:
+            self.delay -=1
+            if click == True:
+                self.hold += 1
+    
+    def uppdate(self,click):
+        if self.upp[0] == 0:
+            self.roll_pitch[1][0] -= self.upp[1]
+            self.roll_pitch[1][1] += self.upp[1]
+                
+        elif self.upp[0] == 1:
+            self.heading[1][0] -= self.upp[1]
+            self.heading[1][1] += self.upp[1]
+                
+        elif self.upp[0] == 2:
+            self.speed[1][0] -= self.upp[1]
+            self.speed[1][1] += self.upp[1]
+            
+        if click == False:
+            self.hold = 0
+            
+        elif click == True and self.hold >=2:
+            self.delay = 0
+            
+class sprites:
+    def __init__(self):
+        self.plus = pygame.Surface((20,20))
+        self.minus = pygame.Surface((20,20))
+        self.draw()
+        
+    def draw(self):
+        self.plus.fill("black")
+        pygame.draw.rect(self.plus, (0,255,0), pygame.Rect(1,1,18,18))
+        pygame.draw.rect(self.plus, (0,0,0), pygame.Rect(9,2,2,16))
+        pygame.draw.rect(self.plus, (0,0,0), pygame.Rect(2,9,16,2))
+        
+        self.minus.fill("black")
+        pygame.draw.rect(self.minus, (255,0,0), pygame.Rect(1,1,18,18))
+        pygame.draw.rect(self.minus, (0,0,0), pygame.Rect(2,9,16,2))
