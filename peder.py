@@ -218,6 +218,8 @@ class mission_Plot:
             self.delay -= 1
         if 19 <= pos[0] <= 19+22 and self.display[1]-41 <= pos[1] <= self.display[1]-41+22 :
             self.save = 1
+        if 19 <= pos[0] <= 19+22 and self.display[1]-81 <= pos[1] <= self.display[1]-81+22 :
+            self.save = 2
 
 class save_file:
     def __init__(self): 
@@ -276,6 +278,8 @@ class settings:
         self.upp = [0,0]
         self.delay = 0
         self.hold = 0
+        
+        
         
         self.path = str(__file__[:-8])+"/settings.txt"
         f = open(self.path, "a")
@@ -344,26 +348,30 @@ class settings:
     
     def pos(self,pos,click):
         if self.delay <= 0:
+            if click == False:
+                self.hold = 0
             for i in range(3):
                 if self.boxes[0][0]<pos[0]<self.boxes[0][0]+20 and self.boxes[0][1]+i*40<pos[1]<self.boxes[0][1]+20+i*40:
                     if click == True:
-                        self.delay = 3
+                        self.delay = 4
                         self.upp = [i,1]
-                        self.uppdate(click)
+                        self.uppdate()
                         break
                         
                 elif self.boxes[1][0]<pos[0]<self.boxes[1][0]+20 and self.boxes[1][1]+i*40<pos[1]<self.boxes[1][1]+20+i*40:
                     if click == True:
-                        self.delay = 3
+                        self.delay = 4
                         self.upp = [i,-1]
-                        self.uppdate(click)
+                        self.uppdate()
                         break
         else:
+
             self.delay -=1
             if click == True:
                 self.hold += 1
     
-    def uppdate(self,click):
+    def uppdate(self):
+        print(self.hold) 
         if self.upp[0] == 0:
             self.roll_pitch[1][0] -= self.upp[1]
             self.roll_pitch[1][1] += self.upp[1]
@@ -375,11 +383,10 @@ class settings:
         elif self.upp[0] == 2:
             self.speed[1][0] -= self.upp[1]
             self.speed[1][1] += self.upp[1]
-            
-        if click == False:
-            self.hold = 0
-            
-        elif click == True and self.hold >=2:
+        
+
+        
+        if self.hold >=4:
             self.delay = 0
             
 class sprites:

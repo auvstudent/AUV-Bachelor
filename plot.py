@@ -38,6 +38,7 @@ if True:
     menue = peder.menue("menue",save_file.save[0][1])
     settings = peder.settings()
     sprites = peder.sprites()
+    text_for_settings = peder.text("save settings",45,display[1]-45,30,"black")
     
     #other variables
     running = True
@@ -47,18 +48,25 @@ if True:
     font = pygame.font.Font('freesansbold.ttf', 12)
     counter = 0
     ping = 0
-
+    loc = 0
+    
+    
 def polling():
     global running
     global counter
+    global loc
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
             menue.location = "quit"
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                menue.location = "menue"
-                menue.file_select = 0
+                if loc !=0:
+                    menue.location = loc
+                    loc = 0
+                else:
+                    menue.location = "menue"
+                    menue.file_select = 0
                 counter = 0
                 
 while running: # start of main code
@@ -108,7 +116,7 @@ while running: # start of main code
     while menue.location == "mission plot start": #plot past missions
         polling()
         save_text = peder.text("save plots",45,display[1]-45,30,"black")
-        
+        settings_text = peder.text("settings",45,display[1]-85,30,"black")
         plot = 0# flagg to see if plots change
 
         
@@ -171,6 +179,10 @@ while running: # start of main code
         pygame.draw.rect(screen,(0,0,0),pygame.Rect(19,display[1]-41,22,22))
         pygame.draw.rect(screen,(255,255,255),pygame.Rect(20,display[1]-40,20,20))
         screen.blit(save_text[0],save_text[1])
+        
+        pygame.draw.rect(screen,(0,0,0),pygame.Rect(19,display[1]-81,22,22))
+        pygame.draw.rect(screen,(255,255,255),pygame.Rect(20,display[1]-80,20,20))
+        screen.blit(settings_text[0],settings_text[1])
         
         if mission.save == 1:
             ok = 0
@@ -235,6 +247,12 @@ while running: # start of main code
                 
 
             mission.save = 0
+        
+        elif mission.save ==2:
+            pygame.draw.rect(screen,(0,255,0),pygame.Rect(20,display[1]-80,20,20))
+            if pygame.mouse.get_pressed()[0]:
+                menue.location = "settings"
+                loc = "mission plot"
         pygame.display.flip()
         clock.tick(fps)
                 
@@ -268,6 +286,7 @@ while running: # start of main code
         clock.tick(fps)
     
     while menue.location == "settings":
+        settings.pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
         screen.fill("white")
         settings.menue()
         temp = []
@@ -288,7 +307,11 @@ while running: # start of main code
             screen.blit(sprites.plus,(settings.boxes[0][0],settings.boxes[0][1]+40*i))
             screen.blit(sprites.minus,(settings.boxes[1][0],settings.boxes[1][1]+40*i))
             
-        settings.pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
+        screen.blit(text_for_settings[0],text_for_settings[1])
+        pygame.draw.rect(screen,(0,0,0),pygame.Rect(19,display[1]-41,22,22))
+        pygame.draw.rect(screen,(255,255,255),pygame.Rect(20,display[1]-40,20,20))
+        
+        
         polling()
         pygame.display.flip()
         clock.tick(fps)
