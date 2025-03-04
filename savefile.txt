@@ -1,1 +1,0 @@
-1,C:/Users/Peder/Documents/QGroundControl/Telemetry;
