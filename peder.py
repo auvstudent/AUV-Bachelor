@@ -1,9 +1,11 @@
 import pygame
+import pygame_chart as pyc
 import tkinter
 from tkinter import filedialog
 import glob, os
 import pandas as pd
 import time
+
 
 def text(skrift,x,y,z,color):
     font2 = pygame.font.Font('freesansbold.ttf', z)
@@ -79,18 +81,21 @@ class plot:
   
 class menue:
     def __init__(self,location,folder):
+        print("menue init:",end=" ")
         self.folder_path = folder
         self.location = location
         self.file_select = 0
 
         
         self.option1 = self.mtext("Live plot",10,50,30,"black")
-        self.option2 = self.mtext("Mission plot",10,100,30,"black")
+        self.option2 = self.mtext("Mission data",10,100,30,"black")
         self.option3 = self.mtext("Settings",20,150,30,"black")
         self.option4 = self.mtext("Test",20,200,30,"black")
         self.select = 0
         self.got = 0
         self.file_Selected = ""
+        print("done")
+        print()
         
     def mtext(self,skrift,x,y,z,color):
         font2 = pygame.font.Font('freesansbold.ttf', z)
@@ -112,8 +117,8 @@ class menue:
             self.option1 = self.mtext("Live plot",20,50,30,"green")
             if click == True:
                 self.location = "live plot"
+                
         elif self.option2[1][0] <= pos[0] <= self.option2[1][0]+self.option2[1][2] and self.option2[1][1] <= pos[1] <= self.option2[1][1]+self.option2[1][3]:
-            
             self.option2 = self.mtext("Mission data",20,100,30,"green")
             if click == True:
                 self.got = 0
@@ -138,7 +143,7 @@ class menue:
                         self.location = "mission plot"
                         self.file_Selected = self.folder_path+"/"+self.filer[i]
                         
-            self.get_files()    
+            self.get_files() 
     
     def get_pos_2(self,pos,click):
         pass
@@ -222,24 +227,26 @@ class mission_Plot:
             self.save = 2
 
 class save_file:
-    def __init__(self): 
+    def __init__(self):
+        print("save file init:",end=" ")
         self.save_exist = 0
-        self.path = str(__file__[:-8])+"/savefile.txt"
+        self.path = str(__file__[:-8])+"savefile.txt"
         f = open(self.path, "a")
         f.close()
         f = open(self.path, "r")
         self.save_read = f.read()
+        
         f.close()
         f.close()
         self.read_savefile()
-        
+        print("done")
+        print()
     def read_savefile(self):
         self.save = []
         temp = []
         counter = 0
         save_exist = 0
         if self.save_read == "":
-
             tkinter.Tk().withdraw()
             self.folder_path = filedialog.askdirectory()
             time.sleep(1)
@@ -267,10 +274,10 @@ class save_file:
             f.write(";")
         f.close()
         f.close()
-        print("done")
-
+        
 class settings:
     def __init__(self):
+        print("settings init:",end=" ")
         self.roll_pitch = None
         self.heading = None
         self.speed  = None
@@ -289,6 +296,8 @@ class settings:
         f.close()
         f.close()
         self.read_settings()
+        print("done")
+        print()
     def read_settings(self):
         a = 0
         temp = []
@@ -370,8 +379,7 @@ class settings:
             if click == True:
                 self.hold += 1
     
-    def uppdate(self):
-        print(self.hold) 
+    def uppdate(self): 
         if self.upp[0] == 0:
             self.roll_pitch[1][0] -= self.upp[1]
             self.roll_pitch[1][1] += self.upp[1]
@@ -404,3 +412,28 @@ class sprites:
         self.minus.fill("black")
         pygame.draw.rect(self.minus, (255,0,0), pygame.Rect(1,1,18,18))
         pygame.draw.rect(self.minus, (0,0,0), pygame.Rect(2,9,16,2))
+        
+class plot_surface:
+    def __init__(self,sx,sy,name):
+        self.name = name
+        self.surface = pygame.Surface((sx,sy))
+        self.surface.fill("white")
+        self.plot_fig = pyc.Figure(self.surface, 0, 0, 360, 360)
+        self.plot_fig.add_title(self.name)
+        
+
+    
+    def limit(self,minus,plus):
+        self.minus = minus
+        self.plus = plus
+        self.plot_fig.set_ylim((self.minus,self.plus))
+    
+    def uppdate(self):
+        self.plot_fig.set_ylim((self.minus,self.plus))
+        self.plot_fig.add_title(self.name)
+        self.plot_fig.add_legend()
+        self.plot_fig.draw()
+        
+    def clear(self):
+        self.plot_fig = pyc.Figure(self.surface, 0, 0, 360, 360)
+        
