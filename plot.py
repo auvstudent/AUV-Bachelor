@@ -5,7 +5,7 @@ import time
 import pygame_chart as pyc
 import tkinter
 from tkinter import filedialog
-
+import random
 
 if True:
     print()
@@ -38,7 +38,7 @@ if True:
     pygame.display.set_caption("AUV plot") 
     meny = peder.plot(logfil,pltScreen,offset)
     menue = peder.menue("menue",save_file.save[0][1])
-    settings = peder.settings()
+    settings = peder.settings(display)
     sprites = peder.sprites()
     text_for_settings = peder.text("save settings",45,display[1]-45,30,"black")
     
@@ -48,10 +48,12 @@ if True:
     counter = 0
     fps = 24
     font = pygame.font.Font('freesansbold.ttf', 12)
-    counter = 0
     ping = 0
     loc = 0
     global mission
+    global plot_state
+    plot_state = 0
+    
     print("settup complete")
     
 def polling():
@@ -98,7 +100,14 @@ while running: # start of main code
         screen.fill("white")
         draw = 0
         plts = [0,0,0]
-        mission = peder.mission_Plot(menue.file_Selected,display)
+        mission = peder.mission_Plot(menue.file_Selected,display,plot_state)
+        plot_state = 0
+        arming = peder.text("activations: ",300,display[1]-45,30,"black")
+        start_points = mission.get_arming()
+        for i in range(len(start_points)):
+            mission.mission_select.append(0)
+        print(start_points)
+        
         
         figure1 = peder.plot_surface(360, 360, "Pitch, Roll")
         figure1.limit(settings.roll_pitch[1][0],settings.roll_pitch[1][1])
@@ -122,9 +131,23 @@ while running: # start of main code
             polling()
             save_text = peder.text("save plots",45,display[1]-45,30,"black")
             settings_text = peder.text("settings",45,display[1]-85,30,"black")
+            
             plot = 0# flagg to see if plots change
             
             mission.get_pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
+            screen.blit(arming[0],arming[1])
+            armings = []
+            
+            
+            for i in range(1,len(start_points)+1):
+                if mission.mission_select[i-1] == 1:
+                    armings.append(peder.text(str(i), 460+30*i, display[1]-45, 30, "green"))
+                else:
+                    armings.append(peder.text(str(i), 460+30*i, display[1]-45, 30, "black"))
+                
+            for i in armings:
+                screen.blit(i[0],i[1])
+            pygame.draw.rect(screen,(0,0,0),pygame.Rect(460+mission.mission_selected*30,display[1]-15,20,2))
   
             if mission.toggle == 1:
                 plts = [0,0,0]
@@ -181,6 +204,7 @@ while running: # start of main code
             pygame.draw.rect(screen,(0,0,0),pygame.Rect(19,display[1]-81,22,22))
             pygame.draw.rect(screen,(255,255,255),pygame.Rect(20,display[1]-80,20,20))
             screen.blit(settings_text[0],settings_text[1])
+            
             pingAvg = 0
             for i in ping:
                 pingAvg += i
@@ -203,6 +227,7 @@ while running: # start of main code
             elif mission.save ==2:
                 pygame.draw.rect(screen,(0,255,0),pygame.Rect(20,display[1]-80,20,20))
                 if pygame.mouse.get_pressed()[0]:
+                    plot_state = mission.plot_points
                     menue.location = "settings"
                     loc = "mission plot"
                     
@@ -266,24 +291,33 @@ while running: # start of main code
             
         screen.blit(text_for_settings[0],text_for_settings[1])
         pygame.draw.rect(screen,(0,0,0),pygame.Rect(19,display[1]-41,22,22))
-        pygame.draw.rect(screen,(255,255,255),pygame.Rect(20,display[1]-40,20,20))
-        
+        if settings.save == 0:
+            pygame.draw.rect(screen,(255,255,255),pygame.Rect(20,display[1]-40,20,20))
+        elif settings.save == 1:
+            pygame.draw.rect(screen,(0,255,0),pygame.Rect(20,display[1]-40,20,20))
         
         polling()
         pygame.display.flip()
         clock.tick(fps)
         
-   
     while menue.location == "test":
         polling()
-        screen.fill("red")
+        counter += 1
+        if counter == 1:
+            color = [random.randint(0,255),random.randint(0,255),random.randint(0,255)]
+        subliminal = peder.text("give A", random.randint(0,display[0]), random.randint(0,display[1]), 30, (random.randint(0,255),random.randint(0,255),random.randint(0,255)))
+            
+        screen.fill(color)
         
+        if counter == random.randint(0,fps):
+            screen.blit(subliminal[0],subliminal[1])
+        if counter >= fps:
+            counter = 0
         pygame.display.flip()
         clock.tick(fps)
         
     pygame.display.flip()
     clock.tick(fps)  # limits FPS
-    
     
 save_file.write_save()
 pygame.quit()

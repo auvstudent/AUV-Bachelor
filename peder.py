@@ -166,35 +166,45 @@ class menue:
         self.select = 0
         
 class mission_Plot:
-    def __init__(self,file,display):
+    def __init__(self,file,display,state):
         self.file = file
         self.options = [0,0,0]
         self.df = pd.read_csv(self.file,sep="," )
         self.delay = 0
         self.flight_time = self.df["flightTime"].tolist()
         self.missions = []
+        self.break_points = [0]
+        self.mission_select = []
+        self.mission_selected = 1
         self.detect_arm()
-        self.plot_points = [["roll",-1],["pitch",-1],["heading",-1],["groundSpeed",-1]]
         self.toggle = 0
+        
+        if state == 0:
+            self.plot_points = [["roll",-1],["pitch",-1],["heading",-1],["groundSpeed",-1]]
+        else:
+            self.plot_points = state
+            self.toggle = 1
+        
         self.display = display
         self.save = 0
         self.plot()
         self.menue()
         
     def detect_arm(self):
-        for i in range(2,len(self.flight_time)):
+        for i in range(2+self.break_points[self.mission_selected-1],len(self.flight_time)):
             if self.flight_time[i] == self.flight_time[i-1]:
                 self.time = i
                 break
+            
     def plot(self):
         self.plot_time = []
         self.data = []
-        for i in range(self.time):
+        for i in range(self.time-self.break_points[self.mission_selected-1]):
             self.plot_time.append(i)
         for i in range(len(self.plot_points)):
             data = self.df[self.plot_points[i][0]].tolist()
             temp = []
-            for i in range(self.time):
+            for i in range(self.break_points[self.mission_selected-1],self.time):
                 temp.append(data[i])
             self.data.append(temp)
             
@@ -225,6 +235,24 @@ class mission_Plot:
             self.save = 1
         if 19 <= pos[0] <= 19+22 and self.display[1]-81 <= pos[1] <= self.display[1]-81+22 :
             self.save = 2
+            
+        for i in range(len(self.mission_select)):
+            if 490+30*i <= pos[0] <= 520+30*i and self.display[1]-45 <= pos[1] <= self.display[1]-15 :
+                self.mission_select[i] = 1
+                if click == True:
+                    self.mission_selected = i+1
+                    self.toggle = 1
+                    self.detect_arm()
+                    self.plot()
+            else:
+                self.mission_select[i] = 0
+    
+    def get_arming(self):
+        self.break_points = [0]
+        for i in range(1,len(self.flight_time)):
+            if self.flight_time[i] < self.flight_time[i-1] :
+                self.break_points.append(i)
+        return self.break_points
 
 class save_file:
     def __init__(self):
@@ -276,7 +304,8 @@ class save_file:
         f.close()
         
 class settings:
-    def __init__(self):
+    def __init__(self,display):
+        self.display = display
         print("settings init:",end=" ")
         self.roll_pitch = None
         self.heading = None
@@ -373,11 +402,20 @@ class settings:
                         self.upp = [i,-1]
                         self.uppdate()
                         break
+                
         else:
 
             self.delay -=1
             if click == True:
                 self.hold += 1
+                
+        if 20 <pos[0]<40 and self.display[1]-40< pos[1] <self.display[1]-20:
+            self.save = 1
+            if click == True:
+                self.save_to_file()
+                time.sleep(1)
+        else: 
+            self.save = 0
     
     def uppdate(self): 
         if self.upp[0] == 0:
@@ -420,8 +458,6 @@ class plot_surface:
         self.surface.fill("white")
         self.plot_fig = pyc.Figure(self.surface, 0, 0, 360, 360)
         self.plot_fig.add_title(self.name)
-        
-
     
     def limit(self,minus,plus):
         self.minus = minus
