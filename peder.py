@@ -5,6 +5,8 @@ from tkinter import filedialog
 import glob, os
 import pandas as pd
 import time
+import numpy as np
+from numpy.linalg import inv
 
 
 def text(skrift,x,y,z,color):
@@ -85,12 +87,13 @@ class menue:
         self.folder_path = folder
         self.location = location
         self.file_select = 0
-
+        self.choice = 0
+        self.options = []
+        self.option_text = ["Live plot","Mission data","Settings","Test","controller"]
         
-        self.option1 = self.mtext("Live plot",10,50,30,"black")
-        self.option2 = self.mtext("Mission data",10,100,30,"black")
-        self.option3 = self.mtext("Settings",20,150,30,"black")
-        self.option4 = self.mtext("Test",20,200,30,"black")
+        for i in range(len(self.option_text)):
+            self.options.append([0,text(self.option_text[i],10,50+50*i,30,"black"),text(self.option_text[i],9,49+50*i,32,"green"),i+1])
+            
         self.select = 0
         self.got = 0
         self.file_Selected = ""
@@ -107,34 +110,27 @@ class menue:
     
     
     def get_pos(self,pos,click):
-        
-        self.option1 = self.mtext("Live plot",20,50,30,"black")
-        self.option2 = self.mtext("Mission data",20,100,30,"black")
-        self.option3 = self.mtext("Settings",20,150,30,"black")
-        self.option4 = self.mtext("Test",20,200,30,"black")
-        
-        if self.option1[1][0] <= pos[0] <= self.option1[1][0]+self.option1[1][2] and self.option1[1][1] <= pos[1] <= self.option1[1][1]+self.option1[1][3]:
-            self.option1 = self.mtext("Live plot",20,50,30,"green")
-            if click == True:
-                self.location = "live plot"
-                
-        elif self.option2[1][0] <= pos[0] <= self.option2[1][0]+self.option2[1][2] and self.option2[1][1] <= pos[1] <= self.option2[1][1]+self.option2[1][3]:
-            self.option2 = self.mtext("Mission data",20,100,30,"green")
-            if click == True:
-                self.got = 0
-                self.get_files()
-                self.file_select = 1
-                
-        elif self.option3[1][0] <= pos[0] <= self.option3[1][0]+self.option3[1][2] and self.option3[1][1] <= pos[1] <= self.option3[1][1]+self.option3[1][3]:
-            self.option3 = self.mtext("Settings",20,150,30,"green")
-            if click == True:
-                self.location = "settings"
-        
-        elif self.option4[1][0] <= pos[0] <= self.option4[1][0]+self.option4[1][2] and self.option4[1][1] <= pos[1] <= self.option4[1][1]+self.option4[1][3]:
-            self.option4 = self.mtext("Test",20,200,30,"green")
-            if click == True:
-                self.location = "test"
-                
+        for i in self.options:
+            i[0] = 0
+            if i[1][1][0] <= pos[0] <= i[1][1][0]+i[1][1][2] and i[1][1][1] <= pos[1] <= i[1][1][1]+i[1][1][3]:
+                i[0] = 1
+                if click == True:
+                    self.choice = i[3]
+                    
+        if self.choice == 1:
+            self.location = "live plot"
+        elif self.choice == 2:
+            self.got = 0
+            self.get_files()
+            self.file_select = 1
+        elif self.choice == 3:
+            self.location = "settings"
+        elif self.choice == 4:
+            self.location = "test"
+        elif self.choice == 5:
+            self.location = "controller"
+        self.choice = 0
+            
         if self.file_select == 1:
             for i in range(len(self.log_fil)):
                 if self.log_fil[i][1][0] <= pos[0] <= self.log_fil[i][1][0]+self.log_fil[i][1][2] and self.log_fil[i][1][1] <= pos[1] <= self.log_fil[i][1][1]+self.log_fil[i][1][3]:
@@ -473,3 +469,86 @@ class plot_surface:
     def clear(self):
         self.plot_fig = pyc.Figure(self.surface, 0, 0, 360, 360)
         
+class cube:
+    def __init__(self):
+        # u = up, d = down, n = north, s = south, w = west, e = east
+        self.rot = 0.523599
+        self.Rx = np.array([[1],[0],[0],
+                   [0],[np.cos(self.rot)],[-np.sin(self.rot)],
+                   [0],[np.sin(self.rot)],[np.cos(self.rot)]]).reshape(3,3)
+        self.Ry =np.array([[np.cos(self.rot)],[0],[np.sin(self.rot)],
+                           [0],[1],[0],
+                           [-np.sin(self.rot)],[0],[np.cos(self.rot)]]).reshape(3,3)
+        
+        self.origo = [0,0,0] #middle of shape
+        self.unw = np.array([-4,1,1]).reshape(3,1)
+        self.une = np.array([4,1,1]).reshape(3,1)
+        self.usw = np.array([-4,-1,1]).reshape(3,1)
+        self.use = np.array([4,-1,1]).reshape(3,1)
+        self.dnw = np.array([-4,1,-1]).reshape(3,1)
+        self.dne = np.array([4,1,-1]).reshape(3,1)
+        self.dsw = np.array([-4,-1,-1]).reshape(3,1)
+        self.dse = np.array([4,-1,-1]).reshape(3,1)
+        self.front = np.array([6,0,0]).reshape(3,1)
+        self.points_origin = [self.unw, self.une, self.usw, self.use, self.dnw, self.dne, self.dsw, self.dse,self.front]
+        self.points = [self.unw, self.une, self.usw, self.use, self.dnw, self.dne, self.dsw, self.dse,self.front]
+        self.edges = [[0,1],[1,3],[3,2],[2,0],
+                      [0,4],[1,5],[2,6],[3,7],
+                      [4,5],[5,7],[7,6],[6,4],
+                      [1,8],[3,8],[5,8],[7,8]]
+        self.board_dim = (600,400)
+        self.scale = 40
+        self.mid = (self.board_dim[0]/2,self.board_dim[1]/2)
+        self.board = pygame.Surface(self.board_dim)
+        self.uppdate()
+        
+    def rotate_y(self):
+        
+        rot = 0.1
+        Ry = np.array([[1],[0],[0],
+                   [0],[np.cos(rot)],[-np.sin(rot)],
+                   [0],[np.sin(rot)],[np.cos(rot)]]).reshape(3,3)
+        for i in range(len(self.points)):
+            self.points[i] = np.dot(Ry, self.points[i])
+        self.uppdate()
+    
+    def rotate_x(self):
+        rot = 0.04
+        Rx =np.array([[np.cos(rot)],[0],[np.sin(rot)],
+                           [0],[1],[0],
+                           [-np.sin(rot)],[0],[np.cos(rot)]]).reshape(3,3)
+        for i in range(len(self.points)):
+            self.points[i] = np.dot(Rx, self.points[i])
+        self.uppdate()
+    
+    def rotate(self,x,y,z):
+        rotx = x
+        rotz = z
+        roty = y
+        
+        Rx = np.array([[1],[0],[0],
+                   [0],[np.cos(rotx)],[-np.sin(rotx)],
+                   [0],[np.sin(rotx)],[np.cos(rotx)]]).reshape(3,3)
+        
+        Ry =np.array([[np.cos(roty)],[0],[np.sin(roty)],
+                      [0],[1],[0],
+                      [-np.sin(roty)],[0],[np.cos(roty)]]).reshape(3,3)
+        
+        Rz = np.array([[np.cos(rotz)],[-np.sin(rotz)],[0],
+                       [np.sin(rotz)],[np.cos(rotz)],[0],
+                       [0],[0],[1]]).reshape(3,3)
+        
+        
+        full_rot = np.dot(np.dot(Rx,Ry),Rz)
+        
+        for i in range(len(self.points)):
+            self.points[i] = np.dot(full_rot,self.points_origin[i])
+        self.uppdate()
+        
+        
+    def uppdate(self):
+        self.board.fill("white")
+        for i in self.edges:
+            pygame.draw.line(self.board, (0,0,0),
+                             (int(self.mid[0]+self.scale*self.points[i[0]][0][0]),int(self.mid[1]+self.scale*self.points[i[0]][2][0])),
+                             (int(self.mid[0]+self.scale*self.points[i[1]][0][0]),int(self.mid[1]+self.scale*self.points[i[1]][2][0])),width=2)

@@ -6,6 +6,7 @@ import pygame_chart as pyc
 import tkinter
 from tkinter import filedialog
 import random
+import numpy as np
 
 if True:
     print()
@@ -33,6 +34,7 @@ if True:
     #initialising
     
     pygame.init()
+    pygame.joystick.init()
     screen = pygame.display.set_mode(display)
     clock = pygame.time.Clock()
     pygame.display.set_caption("AUV plot") 
@@ -40,7 +42,12 @@ if True:
     menue = peder.menue("menue",save_file.save[0][1])
     settings = peder.settings(display)
     sprites = peder.sprites()
+    cube = peder.cube()
+    
+    #text
     text_for_settings = peder.text("save settings",45,display[1]-45,30,"black")
+    controller_text = peder.text("Connect Controller to continiue",display[0]/2,display[1]/2,30,"black")
+    controller_text = peder.text("Connect Controller to continiue",(display[0]-controller_text[1][2])/2,display[1]/4-15,30,"black")
     
     #other variables
     running = True
@@ -50,9 +57,11 @@ if True:
     font = pygame.font.Font('freesansbold.ttf', 12)
     ping = 0
     loc = 0
-    global mission
+    global mission4
     global plot_state
     plot_state = 0
+    rot_count = 0
+    rot_count_complete = np.pi*2
     
     print("settup complete")
     
@@ -73,6 +82,18 @@ def polling():
                     menue.location = "menue"
                     menue.file_select = 0
                 counter = 0
+
+def controller():
+    global running
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+            menue.location = "quit"
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                
+                menue.location = "menue"
+                menue.file_select = 0 
                 
 while running: # start of main code
     # poll for events (userinputs)
@@ -84,10 +105,12 @@ while running: # start of main code
         screen.fill("white")
         menue.get_pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
         
-        screen.blit(menue.option1[0],menue.option1[1])
-        screen.blit(menue.option2[0],menue.option2[1])
-        screen.blit(menue.option3[0],menue.option3[1])
-        screen.blit(menue.option4[0],menue.option4[1])
+        for i in menue.options:
+            if i[0] ==  0:
+                screen.blit(i[1][0],i[1][1])
+            elif i[0] == 1:
+                screen.blit(i[2][0],i[2][1])
+        
         if menue.file_select == 1 or menue.file_select == 2:
             pygame.draw.line(screen, (0,0,0),(250,0),(250,600), width=3)
             for i in menue.log_fil:
@@ -301,24 +324,36 @@ while running: # start of main code
         clock.tick(fps)
         
     while menue.location == "test":
+        rot_count += np.pi/180
         polling()
-        counter += 1
-        if counter == 1:
-            color = [random.randint(0,255),random.randint(0,255),random.randint(0,255)]
-        subliminal = peder.text("give A", random.randint(0,display[0]), random.randint(0,display[1]), 30, (random.randint(0,255),random.randint(0,255),random.randint(0,255)))
-            
-        screen.fill(color)
+        screen.fill("white")
+        screen.blit(cube.board,(50,50))
+        cube.rotate(0.2,0,rot_count)
         
-        if counter == random.randint(0,fps):
-            screen.blit(subliminal[0],subliminal[1])
-        if counter >= fps:
-            counter = 0
+        if rot_count >= rot_count_complete:
+            rot_count = 0
+        
         pygame.display.flip()
         clock.tick(fps)
         
+    while menue.location == "controller":
+        
+        while pygame.joystick.get_count() == 0 and running == True and menue.location == "controller":
+            screen.fill("white")
+            screen.blit(controller_text[0],controller_text[1])
+            pygame.display.flip()
+            clock.tick(fps)
+            controller()
+            
+        while menue.location == "controller":
+            controller()
+            screen.fill("white")
+            pygame.display.flip()
+            clock.tick(fps)
     pygame.display.flip()
     clock.tick(fps)  # limits FPS
     
+pygame.joystick.quit()
 save_file.write_save()
 pygame.quit()
 sys.exit()
