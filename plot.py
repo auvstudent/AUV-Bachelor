@@ -32,7 +32,6 @@ if True:
     logfil = logfil+"/"+filer[-1]
     
     #initialising
-    
     pygame.init()
     pygame.joystick.init()
     screen = pygame.display.set_mode(display)
@@ -42,8 +41,8 @@ if True:
     menue = peder.menue("menue",save_file.save[0][1])
     settings = peder.settings(display)
     sprites = peder.sprites()
-    cube = peder.cube()
-    
+    cube = peder.cube("black","white")
+    live_cube = peder.cube("green","black")
     #text
     text_for_settings = peder.text("save settings",45,display[1]-45,30,"black")
     controller_text = peder.text("Connect Controller to continiue",display[0]/2,display[1]/2,30,"black")
@@ -83,6 +82,7 @@ def polling():
                     menue.file_select = 0
                 counter = 0
 
+            
 def controller():
     global running
     for event in pygame.event.get():
@@ -286,6 +286,9 @@ while running: # start of main code
         for i in range(len(meny.pltH)-1):
             pygame.draw.line(screen, (0,0,255), (meny.pltScreenStart[1][0]+meny.pltH[i][0], meny.pltScreenStart[1][1]+meny.pltH[i][1]), (meny.pltScreenStart[1][0]+meny.pltH[i+1][0], meny.pltScreenStart[1][1]+meny.pltH[i+1][1]), width=1)
         
+        live_cube.rotate(meny.x,meny.y,meny.z)
+        
+        screen.blit(live_cube.board,(100,400))
         meny.move_plot()
         pygame.display.flip()
         clock.tick(fps)
@@ -328,7 +331,7 @@ while running: # start of main code
         polling()
         screen.fill("white")
         screen.blit(cube.board,(50,50))
-        cube.rotate(0.2,0,rot_count)
+        cube.rotate(0,0,rot_count)
         
         if rot_count >= rot_count_complete:
             rot_count = 0
@@ -344,6 +347,7 @@ while running: # start of main code
             pygame.display.flip()
             clock.tick(fps)
             controller()
+            
             
         while menue.location == "controller":
             controller()

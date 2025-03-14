@@ -74,6 +74,9 @@ class plot:
         with open(self.logfil) as f:
             self.last_line = f.readlines()[-1].split(",")
         self.data = [[int(float(self.last_line[1]))],[int(float(self.last_line[2]))],[int(float(self.last_line[3]))]]
+        self.x = self.data[0][0]*(np.pi/180)
+        self.y = self.data[1][0]*(np.pi/180)
+        self.z = (self.data[2][0]-90)*(np.pi/180)
     
     def plt_lines(self):
         d = int(self.pltScreen[0][0]/10)
@@ -358,6 +361,7 @@ class settings:
         self.roll_pitch = ["roll_pitch",[-180,180]]
         self.heading = ["heading",[0,360]]
         self.speed = ["speed",[-10,10]]
+        self.camera = ["camera",[-1,40]]
         
     def save_to_file(self):
         f = open(self.path,"w")
@@ -470,7 +474,13 @@ class plot_surface:
         self.plot_fig = pyc.Figure(self.surface, 0, 0, 360, 360)
         
 class cube:
-    def __init__(self):
+    def __init__(self,wire_color,back_color):
+        self.back_color = back_color
+        self.wire_color = wire_color
+        self.distance = 40
+        self.paint_distance = 1
+        self.camera = np.array([0,-self.distance,-4]).reshape(3,1)
+        self.paint = self.distance-self.paint_distance
         # u = up, d = down, n = north, s = south, w = west, e = east
         self.rot = 0.523599
         self.Rx = np.array([[1],[0],[0],
@@ -480,7 +490,7 @@ class cube:
                            [0],[1],[0],
                            [-np.sin(self.rot)],[0],[np.cos(self.rot)]]).reshape(3,3)
         
-        self.origo = [0,0,0] #middle of shape
+        self.origo = np.array([0,0,0]).reshape(3,1) #middle of shape
         self.unw = np.array([-4,1,1]).reshape(3,1)
         self.une = np.array([4,1,1]).reshape(3,1)
         self.usw = np.array([-4,-1,1]).reshape(3,1)
@@ -490,12 +500,17 @@ class cube:
         self.dsw = np.array([-4,-1,-1]).reshape(3,1)
         self.dse = np.array([4,-1,-1]).reshape(3,1)
         self.front = np.array([6,0,0]).reshape(3,1)
-        self.points_origin = [self.unw, self.une, self.usw, self.use, self.dnw, self.dne, self.dsw, self.dse,self.front]
-        self.points = [self.unw, self.une, self.usw, self.use, self.dnw, self.dne, self.dsw, self.dse,self.front]
+        
+        self.x = np.array([1,0,0]).reshape(3,1)
+        self.y = np.array([0,1,0]).reshape(3,1)
+        self.z = np.array([0,0,-1]).reshape(3,1)
+        self.points_origin = [self.unw, self.une, self.usw, self.use, self.dnw, self.dne, self.dsw, self.dse,self.front,self.origo,self.x,self.y,self.z]
+        self.points = [self.unw, self.une, self.usw, self.use, self.dnw, self.dne, self.dsw, self.dse,self.front,self.origo,self.x,self.y,self.z]
         self.edges = [[0,1],[1,3],[3,2],[2,0],
                       [0,4],[1,5],[2,6],[3,7],
                       [4,5],[5,7],[7,6],[6,4],
-                      [1,8],[3,8],[5,8],[7,8]]
+                      [1,8],[3,8],[5,8],[7,8],
+                      [9,10],[9,11],[9,12]]
         self.board_dim = (600,400)
         self.scale = 40
         self.mid = (self.board_dim[0]/2,self.board_dim[1]/2)
@@ -545,10 +560,37 @@ class cube:
             self.points[i] = np.dot(full_rot,self.points_origin[i])
         self.uppdate()
         
-        
     def uppdate(self):
-        self.board.fill("white")
+        self.fix()
+        self.board.fill(self.back_color)
+        color = self.wire_color
         for i in self.edges:
-            pygame.draw.line(self.board, (0,0,0),
-                             (int(self.mid[0]+self.scale*self.points[i[0]][0][0]),int(self.mid[1]+self.scale*self.points[i[0]][2][0])),
-                             (int(self.mid[0]+self.scale*self.points[i[1]][0][0]),int(self.mid[1]+self.scale*self.points[i[1]][2][0])),width=2)
+            if i[1] == 10:
+                color = (255,0,0)
+            elif i[1] == 11:
+                color = (0,255,0)
+            elif i[1] == 12:
+                color = (0,0,255)
+            else:
+                color = self.wire_color
+            
+            # pygame.draw.line(self.board, (0,0,0),
+            #                  (int(self.mid[0]+self.scale*self.points[i[0]][0][0]),int(self.mid[1]+self.scale*self.points[i[0]][2][0])),
+            #                  (int(self.mid[0]+self.scale*self.points[i[1]][0][0]),int(self.mid[1]+self.scale*self.points[i[1]][2][0])),width=2)
+            
+            pygame.draw.line(self.board, color,
+                             (int(self.mid[0]+self.scale*self.points[i[0]][0]),int(self.mid[1]+self.scale*self.points[i[0]][1]-180)),
+                             (int(self.mid[0]+self.scale*self.points[i[1]][0]),int(self.mid[1]+self.scale*self.points[i[1]][1]-180)),width=2)
+            
+            
+    def fix(self):
+        temp = []
+        temp2 = []
+        for i in self.points:
+            temp.append(i-self.camera)
+
+        for i in temp:
+            a = (np.arctan([i[0][0]/i[1][0],i[2][0]/i[1][0]]))
+            temp2.append([a[0]*self.paint,a[1]*self.paint])
+            
+        self.points = temp2
