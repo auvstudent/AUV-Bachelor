@@ -166,18 +166,21 @@ class menue:
         
 class mission_Plot:
     def __init__(self,file,display,state):
+        self.plot_update = 0
+        self.update = 0
+        self.min = 0
+        self.max = 0
         self.file = file
         self.options = [0,0,0]
         self.df = pd.read_csv(self.file,sep="," )
         self.delay = 0
-        self.flight_time = self.df["flightTime"].tolist()
-        self.missions = []
-        self.break_points = [0]
-        self.mission_select = []
-        self.mission_selected = 1
-        self.detect_arm()
+        self.flight_time = self.df["Timestamp"].tolist()
+        self.max = len(self.flight_time)
+        self.time = len(self.flight_time)
+        self.start_time = 0
         self.toggle = 0
         
+        self.print= "ok"
         if state == 0:
             self.plot_points = [["roll",-1],["pitch",-1],["heading",-1],["groundSpeed",-1]]
         else:
@@ -188,39 +191,44 @@ class mission_Plot:
         self.save = 0
         self.plot()
         self.menue()
-        
-    def detect_arm(self):
-        for i in range(2+self.break_points[self.mission_selected-1],len(self.flight_time)):
-            if self.flight_time[i] == self.flight_time[i-1]:
-                self.time = i
-                break
-            
+    def __repr__(self):
+        return "Test()"
+    def __str__(self):
+        return self.print
+    
     def plot(self):
         self.plot_time = []
         self.data = []
-        for i in range(self.time-self.break_points[self.mission_selected-1]):
+        for i in range(self.start_time,self.time):
             self.plot_time.append(i)
         for i in range(len(self.plot_points)):
             data = self.df[self.plot_points[i][0]].tolist()
             temp = []
-            for i in range(self.break_points[self.mission_selected-1],self.time):
+            for i in range(self.start_time,self.time):
                 temp.append(data[i])
             self.data.append(temp)
             
-    def mtext(self,skrift,x,y,z,color):
-        font2 = pygame.font.Font('freesansbold.ttf', z)
-        text = font2.render(skrift, True, color)
-        textRect = text.get_rect()
-        textRect.center = (x+textRect[2]/2, y+textRect[3]/2)
-        ret = (text,textRect)
-        return ret
-        
     def menue(self):
         self.option_text = []
         for i in range(len(self.plot_points)):
-            self.option_text.append(self.mtext(self.plot_points[i][0],50,30+40*i,30,"black"))
+            self.option_text.append(text(self.plot_points[i][0],50,30+40*i,30,"black"))
             
     def get_pos(self,pos,click):#26,36+40*i,18,18
+        if click == True:
+            if 405 <= pos[0] <= 605 and 740 <= pos[1] <= 790:
+                self.tmin = (pos[0]-405)/200
+                self.start_time = int(self.time*self.tmin)
+                self.update = 1
+            if 905 <= pos[0] <= 1105 and 740 <= pos[1] <= 790:
+                self.tmax = (pos[0]-905)/200
+                self.time =int(self.start_time+((self.max-self.start_time)*self.tmax))
+                self.update = 1
+        elif click == False and self.update == 1:
+            print("ok")
+            self.plot()
+            self.toggle = 1
+            self.update = 0
+
         if self.delay <= 0:
             for i in range(len(self.plot_points)):
                 if 25 <= pos[0] <= 25+20 and 35+40*i <= pos[1] <= 35+40*i+20 :
@@ -235,24 +243,6 @@ class mission_Plot:
         if 19 <= pos[0] <= 19+22 and self.display[1]-81 <= pos[1] <= self.display[1]-81+22 :
             self.save = 2
             
-        for i in range(len(self.mission_select)):
-            if 490+30*i <= pos[0] <= 520+30*i and self.display[1]-45 <= pos[1] <= self.display[1]-15 :
-                self.mission_select[i] = 1
-                if click == True:
-                    self.mission_selected = i+1
-                    self.toggle = 1
-                    self.detect_arm()
-                    self.plot()
-            else:
-                self.mission_select[i] = 0
-    
-    def get_arming(self):
-        self.break_points = [0]
-        for i in range(1,len(self.flight_time)):
-            if self.flight_time[i] < self.flight_time[i-1] :
-                self.break_points.append(i)
-        return self.break_points
-
 class save_file:
     def __init__(self):
         print("save file init:",end=" ")
@@ -304,6 +294,7 @@ class save_file:
         
 class settings:
     def __init__(self,display):
+        
         self.display = display
         print("settings init:",end=" ")
         self.roll_pitch = None
@@ -314,7 +305,12 @@ class settings:
         self.delay = 0
         self.hold = 0
         
-        
+        self.color_change = 0
+        self.new_color = 0
+        self.roll_color = "roll"
+        self.pitch_color = "pitch"
+        self.heading_color = "heading"
+        self.color_options = [text(self.roll_color, 50, 200-10, 30, "black"),text(self.pitch_color, 50, 240-10, 30, "black"),text(self.heading_color, 50, 280-10, 30, "black")]
         
         self.path = str(__file__[:-8])+"/settings.txt"
         f = open(self.path, "a")
@@ -326,44 +322,80 @@ class settings:
         self.read_settings()
         print("done")
         print()
+        
     def read_settings(self):
+        #self.first_start()
+        posision = 0
+        seting = ""
+        plus_minus = ["roll_pitch","heading","speed"]
         a = 0
         temp = []
         ttemp = []
         temp_data = []
         temp_data_start = 0
+
         for i in range(len(self.save_settings)):
             if self.save_settings[i] == ":":
                 ttemp.append(self.save_settings[a:i])
+                seting = self.save_settings[a:i]
+                print(seting)
                 a = i+1
                 
-            elif self.save_settings[i] == "[":
-                temp_data_start = i+1
+            if seting in plus_minus:
+                if self.save_settings[i] == "[":
+                    temp_data_start = i+1
+                    
+                elif self.save_settings[i] == ",":
+                    temp_data.append(int(self.save_settings[temp_data_start:i]))
+                    temp_data_start = i+1
+                    
+                elif self.save_settings[i] == "]":
+                    temp_data.append(int(self.save_settings[temp_data_start:i]))
+                    ttemp.append(temp_data)
+                    temp_data = []
+                elif self.save_settings[i] == ";":
+                    temp.append(ttemp)
+                    ttemp = []
+                    a = i+1
+            elif seting == "color":
+                if self.save_settings[i] == "[":
+                    posision = 1
+                    temp_data_start = i+1
+                    
+                elif self.save_settings[i] == ",":
+                    if posision == 1:
+                        temp_data.append(int(self.save_settings[temp_data_start:i]))
+                        temp_data_start = i+1
                 
-            elif self.save_settings[i] == ",":
-                temp_data.append(int(self.save_settings[temp_data_start:i]))
-                temp_data_start = i+1
+                elif self.save_settings[i] == "]":
+                    if posision == 1:
+                        temp_data.append(int(self.save_settings[temp_data_start:i]))
+                        ttemp.append(temp_data)
+                        temp_data = []
+                    posision = 2
                 
-            elif self.save_settings[i] == "]":
-                temp_data.append(int(self.save_settings[temp_data_start:i]))
-                ttemp.append(temp_data)
-                temp_data = []
-            elif self.save_settings[i] == ";":
-                temp.append(ttemp)
-                ttemp = []
-                a = i+1
-                
+                elif self.save_settings[i] == ";":
+                    posision = 0
+                    temp.append(ttemp)
+                    ttemp = []
+                    a = i+1
+
         self.roll_pitch = [temp[0][0],temp[0][1]]
         self.heading = [temp[1][0],temp[1][1]]
         self.speed = [temp[2][0],temp[2][1]]
+        self.color = [temp[3][0],[temp[3][1],temp[3][2],temp[3][3]]]
+
         
     def first_start(self):
         self.roll_pitch = ["roll_pitch",[-180,180]]
         self.heading = ["heading",[0,360]]
         self.speed = ["speed",[-10,10]]
-        self.camera = ["camera",[-1,40]]
+        self.color = ["color",[[100,100,100],[100,100,100],[100,100,100]]]
+        
+        self.save_to_file()
         
     def save_to_file(self):
+
         f = open(self.path,"w")
         temp = [self.roll_pitch,self.heading,self.speed]
 
@@ -372,6 +404,7 @@ class settings:
             f.write(":")
             f.write(str(i[1]))
             f.write(";")
+        f.write(str(self.color[0])+":"+str(self.color[1])+";")
     
 
         
@@ -380,11 +413,29 @@ class settings:
     
     def menue(self):
         self.option_text = []
-        self.config = [self.roll_pitch,self.heading,self.speed]
+        self.config = [self.roll_pitch,self.heading,self.speed,self.color]
         for i in range(len(self.config)):
             self.option_text.append(text(self.config[i][0],50,30+40*i,30,"black"))    
     
-    def pos(self,pos,click):
+    def pos(self,pos,click,down):
+        print(down)
+        self.new_color = 0
+        if click == True:
+            if 505<pos[0]<505+255 and 195<pos[1]<195+255:
+                self.new_color = (pos[0]-505,pos[1]-195,self.color[1][self.color_change-1][2])
+            elif 505<pos[0]<505+255 and 190+280<pos[1]< 190+280+50:
+                self.new_color = (self.color[1][self.color_change-1][0],self.color[1][self.color_change-1][1],pos[0]-505,)
+
+                
+            for i in range(3):
+                if 250<pos[0]<270 and 195+i*40<pos[1]<215+i*40:
+
+                    if self.color_change != i+1:
+                        self.hold += 1
+                        self.color_change = i+1
+                    else:
+                        if self.hold == 0:
+                            self.color_change = 0
         if self.delay <= 0:
             if click == False:
                 self.hold = 0
@@ -451,6 +502,41 @@ class sprites:
         pygame.draw.rect(self.minus, (255,0,0), pygame.Rect(1,1,18,18))
         pygame.draw.rect(self.minus, (0,0,0), pygame.Rect(2,9,16,2))
         
+class color_sprites:
+    def __init__(self,color):
+        self.color = color
+        self.option = pygame.Surface((20,20))
+        self.select = pygame.Surface((265,355))
+        
+        self.option.fill("black")
+        pygame.draw.rect(self.option, color, pygame.Rect(1,1,18,18))
+        self.select.fill("white")
+        pygame.draw.rect(self.select, (100,100,100), pygame.Rect(5,5,255,255))
+        
+        pygame.draw.rect(self.select, (0,0,0), pygame.Rect(3,278,259,54))
+        for i in range(255):
+            pygame.draw.rect(self.select, (color[0],color[1],i), pygame.Rect(5+i,280,1,50))
+            
+        for i in range(255):
+            for p in range(255):
+                pygame.draw.rect(self.select, (i,p,color[2]), pygame.Rect(5+i,5+p,1,1))
+        
+    def uppdate(self,color):
+        self.color = color
+        self.option.fill("black")
+        pygame.draw.rect(self.option, color, pygame.Rect(1,1,18,18))
+        
+        self.select.fill("white")
+        pygame.draw.rect(self.select, (100,100,100), pygame.Rect(5,5,255,255))
+        
+        pygame.draw.rect(self.select, (0,0,0), pygame.Rect(3,278,259,54))
+        for i in range(255):
+            pygame.draw.rect(self.select, (color[0],color[1],i), pygame.Rect(5+i,280,1,50))
+            
+        for i in range(255):
+            for p in range(255):
+                pygame.draw.rect(self.select, (i,p,color[2]), pygame.Rect(5+i,5+p,1,1))
+        
 class plot_surface:
     def __init__(self,sx,sy,name):
         self.name = name
@@ -473,8 +559,29 @@ class plot_surface:
     def clear(self):
         self.plot_fig = pyc.Figure(self.surface, 0, 0, 360, 360)
         
+class plot_start_stop:
+    def __init__(self,start,stop,current):
+        
+        self.start = text(str(start), 0, 15, 30, "black")
+        self.stop = text(str(stop), 277, 15, 30, "black")
+        self.surface = pygame.Surface((350,60))
+        self.draw(start,stop,current)
+        
+    def draw(self,start,stop,current):
+        self.current = current
+        self.step = (stop-start)/200
+        self.start = text(str(start), 0, 15, 30, "black")
+        self.stop = text(str(stop), 277, 15, 30, "black")
+        self.surface.fill("white")
+        pygame.draw.rect(self.surface,"black",(74,4,202,52))
+        pygame.draw.rect(self.surface,"white",(75,5,200,50))
+        pygame.draw.rect(self.surface,"black",(74+((current-start)/self.step),0,3,55))
+        self.surface.blit(self.start[0],self.start[1])
+        self.surface.blit(self.stop[0],self.stop[1])
+        
 class cube:
-    def __init__(self,wire_color,back_color):
+    def __init__(self,wire_color,back_color,xyz):
+        self.axis = xyz
         self.back_color = back_color
         self.wire_color = wire_color
         self.distance = 40
@@ -566,11 +673,11 @@ class cube:
         color = self.wire_color
         for i in self.edges:
             if i[1] == 10:
-                color = (255,0,0)
+                color = self.axis[0]
             elif i[1] == 11:
-                color = (0,255,0)
+                color = self.axis[1]
             elif i[1] == 12:
-                color = (0,0,255)
+                color = self.axis[2]
             else:
                 color = self.wire_color
             
@@ -594,3 +701,5 @@ class cube:
             temp2.append([a[0]*self.paint,a[1]*self.paint])
             
         self.points = temp2
+    def new_color(self,xyz):
+        self.axis = xyz
