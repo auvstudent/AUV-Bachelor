@@ -46,7 +46,7 @@ if True: #initialising variables and functions
     sprites = AUV_F.sprites()                           #sprites for settings
     color_sprite = [AUV_F.color_sprites(settings.color[1][0]),AUV_F.color_sprites(settings.color[1][1]),AUV_F.color_sprites(settings.color[1][2])] #object for selecting color in settings
     cube = AUV_F.cube("black","white",settings.color[1])        #wire cube for visualising
-    live_cube = AUV_F.cube("green","black",settings.color[1])   #wire cube for visualising
+       #wire cube for visualising
     #text
     text_for_settings = AUV_F.text("save settings",45,display[1]-45,30,"black")
     controller_text = AUV_F.text("Connect Controller to continiue",display[0]/2,display[1]/2,30,"black")
@@ -66,11 +66,14 @@ if True: #initialising variables and functions
     global mission4
     global plot_state
     global down
+    global data_flag
+    data_flag = 0
     down = 0
     plot_state = 0
     rot_count = 0
     rot_count_complete = np.pi*2
     
+    live_cube = AUV_F.cube("green","black",settings.color[1])
     print("settup complete")
     
 def polling():#get user input keyboard
@@ -78,24 +81,26 @@ def polling():#get user input keyboard
     global counter
     global loc
     global down
+    global data_flag
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
             menue.location = "quit"
+            data_flag = 0
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 if loc !=0:
                     menue.location = loc
                     loc = 0
+                elif data_flag == 1:
+                    data_flag = 0
                 else:
                     menue.location = "menue"
+                    #menue.location = "dev1"
                     menue.file_select = 0
                 counter = 0
         elif event.type == pygame.MOUSEMOTION:
             pass
-
-
-            
 def controller():#get user input controller
     global running
     for event in pygame.event.get():
@@ -291,7 +296,8 @@ while running: # start of main code
         for i in range(len(meny.pltH)-1):
             pygame.draw.line(screen, (0,0,255), (meny.pltScreenStart[1][0]+meny.pltH[i][0], meny.pltScreenStart[1][1]+meny.pltH[i][1]), (meny.pltScreenStart[1][0]+meny.pltH[i+1][0], meny.pltScreenStart[1][1]+meny.pltH[i+1][1]), width=1)
         
-        live_cube.rotate(meny.x,meny.y,meny.z)
+        live_cube.rotate(meny.x,meny.y,meny.z,240)
+        #live_cube.rotate(meny.x,meny.y,0)
         
         screen.blit(live_cube.board,(100,400))
         meny.move_plot()
@@ -348,10 +354,11 @@ while running: # start of main code
         
     while menue.location == "dev1":
         rot_count += np.pi/180
+        rot_count = 1
         polling()
         screen.fill("white")
         screen.blit(cube.board,(50,50))
-        cube.rotate(0,0,rot_count)
+        cube.rotate(0,0,0,150)
         
         if rot_count >= rot_count_complete:
             rot_count = 0
@@ -375,17 +382,110 @@ while running: # start of main code
             clock.tick(fps)
     
     while menue.location == "test":
-        data = AUV_F.new_plot(menue.file_Selected)
-        
+        data = AUV_F.new_plot(menue.file_Selected,display)
+        data_flag = 0
+        a = 1
+        xtext = AUV_F.text("X:", 10, 10, 30, "black")
+        ytext = AUV_F.text("Y:", 100, 10, 30, "black")
+        big_plot = AUV_F.big_plot()
         while menue.location == "test":
             polling()
             screen.fill("white")
             data.get_pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
             
+            
             for i in range(len(data.text)):
                 screen.blit(data.text[i][data.text[i][0]][0],data.text[i][data.text[i][0]][1])
                 
             pygame.draw.line(screen, (0,0,0),(370,0),(370,display[1]-10), width=3)
+            if len(data.save) > 0:
+                screen.blit(data.plot_text[data.plot_text[0]][0],data.plot_text[data.plot_text[0]][1])
+            if data.next > 0:
+                
+                pygame.draw.line(screen, (0,0,0),(data.text[data.next-1][1][1][0],data.text[data.next-1][1][1][1]+32),(data.text[data.next-1][1][1][0]+data.text[data.next-1][1][1][2],data.text[data.next-1][1][1][1]+32), width=3)
+                for i in range(len(data.next_data)):
+                    pygame.draw.rect(screen,(0,0,0),pygame.Rect(390,14+50*i,22,22))
+                    set_color = (255,255,255)
+                    for p in data.save:
+                        if p[0] == data.next-1 and p[1] == i:
+                            set_color = (0,255,0)
+                    pygame.draw.rect(screen,set_color,pygame.Rect(391,15+50*i,20,20))
+                    screen.blit(data.next_data[i][data.next_data[i][0]][0],data.next_data[i][data.next_data[i][0]][1])
+            if data.plot == True:
+                data_flag = 1
+                data.plot = False
+                data.plot_data()
+                while data_flag == 1:
+                    polling()
+                    data.get_pos_2(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
+                    screen.fill("white")
+                    screen.blit(xtext[0],xtext[1])
+                    screen.blit(ytext[0],ytext[1])
+                    pygame.draw.rect(screen,(0,0,0),pygame.Rect(42,8,30,30))
+                    pygame.draw.rect(screen,(0,0,0),pygame.Rect(132,8,30,30))
+                    
+                    pygame.draw.rect(screen,(255,255,255),pygame.Rect(44,10,26,26))
+                    pygame.draw.rect(screen,(255,255,255),pygame.Rect(134,10,26,26))
+                    if data.chose != 0:
+                        pygame.draw.rect(screen,(0+255*(data.chose-1),255,0),pygame.Rect(44+90*(data.chose-1),10,26,26))
+                        
+                    for i in range(len(data.data_to_plot)):
+                        screen.blit(data.data_to_plot[i][0][0],data.data_to_plot[i][0][1])
+                        pygame.draw.rect(screen,(0,0,0),pygame.Rect(20,62+50*i,22,22))
+                        if data.data_to_plot[i][1] == 1:
+                            pygame.draw.rect(screen,(0,255,0),pygame.Rect(21,63+50*i,20,20))
+                        elif data.data_to_plot[i][1] == 2:
+                            pygame.draw.rect(screen,(255,255,0),pygame.Rect(21,63+50*i,20,20))
+                        else:
+                            pygame.draw.rect(screen,(255,255,255),pygame.Rect(21,63+50*i,20,20))
+                        if data.data_to_plot[i][2] != 0:
+                            screen.blit(data.data_to_plot[i][3][0],data.data_to_plot[i][3][1])
+                    
+                    screen.blit(data.plot_text2[data.plot_text2[0]][0],data.plot_text2[data.plot_text2[0]][1])
+                    if data.start_plot == 1:
+                        data.a = 1
+                        data.start_plot = 0
+                        for i in range(3):
+                            if data.chosen[0][i] == 0 or data.chosen[0][i] == 1:
+                                data.x[i] = data.time_plot
+                            else:
+                                pass
+                                data.x[i] = data.df[data.data[data.save[data.chosen[0][i]-2][0]][1][data.save[data.chosen[0][i]-2][1]]].tolist()
+                            
+                            if data.chosen[1][i] == 0:
+                                data.y[i] = data.time_plot
+                            else:
+                                data.y[i] = data.df[data.data[data.save[data.chosen[1][i]-2][0]][1][data.save[data.chosen[1][i]-2][1]]].tolist()
+                        
+                    if data.a == 1:
+                        for i in range(len(data.plot_text3)):
+                            screen.blit(data.plot_text3[i][0],data.plot_text3[i][1])
+                            
+                    if data.b[1] == 1:
+                        pygame.draw.line(screen, (0,0,0),(80+30*data.b[2],display[1]-18),(100+30*data.b[2],display[1]-18), width=3)
+                        print(data.df["altitudeAboveTerr"][0])
+                    if data.b[0] == 1:
+                        data.b[0] = 0
+                        
+                        big_plot.clear()
+                        try:
+                            big_plot.plot_fig.line(str(data.b), data.x[data.b[2]] , data.y[data.b[2]] ,color = (0,0,0))
+                        except:
+                            big_plot.error()
+                        big_plot.uppdate()
+
+                        
+                            
+
+                                    
+
+
+                    
+                    screen.blit(big_plot.surface,(400,10))
+                        
+                    
+                    pygame.display.flip()
+                    clock.tick(fps)
             
             
             pygame.display.flip()

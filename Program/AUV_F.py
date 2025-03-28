@@ -632,30 +632,12 @@ class cube:
         self.scale = 40
         self.mid = (self.board_dim[0]/2,self.board_dim[1]/2)
         self.board = pygame.Surface(self.board_dim)
+        #self.rotate(0,0,np.pi/2)
         self.uppdate()
         
-    def rotate_y(self):
-        
-        rot = 0.1
-        Ry = np.array([[1],[0],[0],
-                   [0],[np.cos(rot)],[-np.sin(rot)],
-                   [0],[np.sin(rot)],[np.cos(rot)]]).reshape(3,3)
-        for i in range(len(self.points)):
-            self.points[i] = np.dot(Ry, self.points[i])
-        self.uppdate()
-    
-    def rotate_x(self):
-        rot = 0.04
-        Rx =np.array([[np.cos(rot)],[0],[np.sin(rot)],
-                           [0],[1],[0],
-                           [-np.sin(rot)],[0],[np.cos(rot)]]).reshape(3,3)
-        for i in range(len(self.points)):
-            self.points[i] = np.dot(Rx, self.points[i])
-        self.uppdate()
-    
-    def rotate(self,x,y,z):
+    def rotate(self,x,y,z,computer):
         rotx = x
-        rotz = z
+        rotz = z+(np.pi/2)+(computer*(np.pi/180))
         roty = y
         
         Rx = np.array([[1],[0],[0],
@@ -671,7 +653,7 @@ class cube:
                        [0],[0],[1]]).reshape(3,3)
         
         
-        full_rot = np.dot(np.dot(Rx,Ry),Rz)
+        full_rot = np.dot(np.dot(Rz,Ry),Rx)
         
         for i in range(len(self.points)):
             self.points[i] = np.dot(full_rot,self.points_origin[i])
@@ -715,9 +697,26 @@ class cube:
         self.axis = xyz
 
 class new_plot:
-    def __init__(self,file):
+    def __init__(self,file,display):
         print()
         print("plot initialising:",end=" ")
+        self.display = display
+        self.a = 0
+        self.b = [0,0]
+        self.start_plot = 0
+        self.chose = 0
+        self.chosen = [[0,0,0],[0,0,0]]
+        self.x = [0,0,0]
+        self.y = [0,0,0]
+        self.temp = 0
+        self.time_plot = []
+        self.plot_text = [1,text("plot chosen data", 430, display[1]-50, 30, "black"), text("plot chosen data", 430, display[1]-50, 30, "green")]
+        self.plot_text2 = [1,text("plot:", 10, display[1]-50, 30, "black"),text("plot:", 10, display[1]-50, 30, "green")]
+        self.plot_text3 = []
+        for i in range(3):
+            self.plot_text3.append(text(str(i+1), 80+30*i, display[1]-50, 30, "black"))
+        self.flag = 0
+        self.next = 0
         self.plot_update = 0
         self.update = 0
         self.min = 0
@@ -729,7 +728,12 @@ class new_plot:
         self.flight_time = self.df["Timestamp"].tolist()
         self.max = len(self.flight_time)
         self.time = len(self.flight_time)
-
+        for i in range(self.time):
+            self.time_plot.append(i)
+        self.next_data = []
+        self.plot = False
+        self.data_to_plot = []
+        
         self.data_points()
         self.text()
         print("done")
@@ -750,19 +754,139 @@ class new_plot:
         self.vibration = ["vibration.xAxis","vibration.yAxis","vibration.zAxis","vibration.clipCount1","vibration.clipCount2","vibration.clipCount3"]
         self.wind = ["wind.direction","wind.speed","wind.verticalSpeed"]
         self.data = [["referances",self.referances],["axis",self.axis],["movement",self.movement],["posision",self.posision],["deviation",self.deviation],["mission_points",self.mission_points],["temp",self.temp],["battery",self.battery],["local_posision_setpoint",self.local_posision_setpoint],["local_posision",self.local_posision],["setpoint",self.setpoint],["temperature",self.temperature],["vibration",self.vibration],["wind",self.wind]]
-        
+        self.save = []
     def text(self):
         self.text = []
         for i in range(len(self.data)):
             self.text.append([1,text(self.data[i][0], 10, 10+50*i, 30, "black"),text(self.data[i][0], 10, 10+50*i, 30, "green")])
         print(self.text[1][1][1])
+    def next_text(self):
+        self.next_data = []
+        for i in range(len(self.data[self.next-1][1])):
+            if self.df[self.data[self.next-1][1][i]][0] == "--.--":
+                self.next_data.append([1,text(self.data[self.next-1][1][i], 430, 10+50*i, 30, "red"),text(self.data[self.next-1][1][i], 430, 10+50*i, 30, "red")])
+            else:
+                self.next_data.append([1,text(self.data[self.next-1][1][i], 430, 10+50*i, 30, "black"),text(self.data[self.next-1][1][i], 430, 10+50*i, 30, "green")])
             
     def get_pos(self,pos,click):
         for i in range(len(self.text)):
-            if self.text[i][1][1][0]<pos[0]<self.text[i][1][1][2] and self.text[i][1][1][1]<pos[1]<self.text[i][1][1][1]+self.text[i][1][1][3]:
+            if self.text[i][1][1][0]<pos[0]<self.text[i][1][1][0]+self.text[i][1][1][2] and self.text[i][1][1][1]<pos[1]<self.text[i][1][1][1]+self.text[i][1][1][3]:
                 self.text[i][0] = 2
                 if click == True:
-                    print(i)
+                    if self.flag == 0:
+                        if self.next == i+1:
+                            self.next = 0
+                        else:
+                            self.next = i+1
+                            self.next_text()
+                    self.flag = 1
             else:
                 self.text[i][0] = 1
+        if self.next > 0:
+            for i in range(len(self.next_data)):
+                if self.next_data[i][1][1][0]<pos[0]<self.next_data[i][1][1][0]+self.next_data[i][1][1][2] and self.next_data[i][1][1][1]<pos[1]<self.next_data[i][1][1][1]+self.next_data[i][1][1][3] or 390<pos[0]<390+22 and 14+50*i<pos[1]<37+50*i:
+                    self.next_data[i][0] = 2
+                    if click == True:
+                        if self.flag == 0:
+                            temp = [self.next-1,i]
+                            for i in range(len(self.save)):
+                                if self.save[i] == temp:
+                                    self.save.pop(i)
+                                    temp = []
+                                    break
+                            if temp != []:
+                                self.save.append(temp)
+                            self.flag = 1
+                    
+                
+                else:
+                    self.next_data[i][0] = 1
+                
+            
+        if len(self.save) > 0:      
+            if self.plot_text[1][1][0] <pos[0]< self.plot_text[1][1][0]+self.plot_text[1][1][2] and self.plot_text[1][1][1]<pos[1]<self.plot_text[1][1][1]+self.plot_text[1][1][3]:
+                self.plot_text[0] = 2
+                if click == True and self.flag == 0:
+                    self.flag = 1
+                    self.plot = True
+            else:
+                self.plot_text[0] = 1
+        if click == False:
+            self.flag = 0
         
+    
+        
+    def plot_data(self):
+        self.data_to_plot = []
+        self.chosen = [[0,0,0],[0,0,0]]
+        self.data_to_plot.append([text("Time", 50, 60, 30, "black"),0,0,0])
+        for i in range(len(self.save)):
+            self.data_to_plot.append([text(self.data[self.save[i][0]][1][self.save[i][1]], 50, 110+50*i, 30, "black"),0,0,0])
+            
+    def get_pos_2(self,pos,click):
+        if click == True:
+            if 42<pos[0]<72 and 8<pos[1]<38:
+                self.chose = 1
+            elif 132<pos[0]<162 and 8<pos[1]<38:
+                self.chose = 2
+        if self.plot_text2[1][1][0] <pos[0]< self.plot_text2[1][1][0]+self.plot_text2[1][1][2] and self.plot_text2[1][1][1]<pos[1]<self.plot_text2[1][1][1]+self.plot_text2[1][1][3]:
+            self.plot_text2[0] = 2
+            if click == True and self.flag == 0:
+                self.flag = 1
+                self.start_plot = 1
+            
+        else:
+            self.plot_text2[0] = 1
+            
+        for i in range(len(self.data_to_plot)):
+            if 20<pos[0]<42 and 62+50*i<pos[1]<82+50*i:
+                if click == True and self.flag == 0:
+                    self.flag = 1
+                    if self.chose != 0:
+                        self.temp = 0
+                        if self.data_to_plot[i][1] == 0:
+                            for p in range(len(self.chosen[self.chose-1])):
+                                if self.chosen[self.chose-1][p] == 0:
+                                    self.chosen[self.chose-1][p] = i+1
+                                    self.temp = p+1
+                                    break
+                            if self.temp != 0:
+                                self.data_to_plot[i][1] = self.chose
+                                self.data_to_plot[i][2] = self.temp
+                                self.data_to_plot[i][3] = text(str(self.temp), 24, 62+50*i, 20, "black")
+                        else:
+                            self.chosen[self.data_to_plot[i][1]-1][self.data_to_plot[i][2]-1] = 0
+                            for x in range(3):
+                                self.data_to_plot[i][x+1] = 0
+                    
+        if self.a == 1:
+            for i in range(3):
+                if 80+30*i<pos[0]<110+30*i and self.display[1]-50<pos[1]<self.display[1]-20:
+                    if click == True and self.flag == 0:
+                        self.flag = 1
+                        self.b = [1,1,i]
+        if click == False:
+            self.flag = 0
+                    
+class big_plot:
+    def __init__(self):
+        self.flag = 0
+        self.surface = pygame.Surface((700,700))
+        self.surface.fill("white")
+        self.plot_fig = pyc.Figure(self.surface, 0, 0, 700, 700)
+        
+    def uppdate(self):
+        self.surface.fill("white")
+        try:
+            self.plot_fig.draw()
+            self.plot_fig.draw()
+        except:
+            self.error()
+            
+
+        
+    def clear(self):
+        self.surface.fill("white")
+        self.plot_fig = pyc.Figure(self.surface, 0, 0, 700, 700)
+    def error(self):
+        self.surface.fill("red")
