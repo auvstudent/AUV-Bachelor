@@ -7,6 +7,7 @@ import tkinter
 from tkinter import filedialog
 import random
 import numpy as np
+import Sprites
 
 if True: #initialising variables and functions
     print()
@@ -74,6 +75,9 @@ if True: #initialising variables and functions
     rot_count_complete = np.pi*2
     
     live_cube = AUV_F.cube("green","black",settings.color[1])
+    
+    #test_slider = Sprites.slider("X:","white",100,display[1]-100,0,1000,250)
+
     print("settup complete")
     
 def polling():#get user input keyboard
@@ -101,6 +105,7 @@ def polling():#get user input keyboard
                 counter = 0
         elif event.type == pygame.MOUSEMOTION:
             pass
+        
 def controller():#get user input controller
     global running
     for event in pygame.event.get():
@@ -133,6 +138,8 @@ while running: # start of main code
             pygame.draw.line(screen, (0,0,0),(250,0),(250,600), width=3)
             for i in menue.log_fil:
                 screen.blit(i[0],i[1])
+                
+        #screen.blit(test_slider.surface,test_slider.location)
         pygame.display.flip()
         clock.tick(fps)
            
@@ -175,9 +182,6 @@ while running: # start of main code
 
             mission.get_pos(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])#get mouse posision
 
-            
-
-  
             if mission.toggle == 1:
                 plts = [0,0,0]
                 for i in range(len(mission.plot_points)):#if any plot poitns are to be drawn draw them
@@ -388,6 +392,9 @@ while running: # start of main code
         xtext = AUV_F.text("X:", 10, 10, 30, "black")
         ytext = AUV_F.text("Y:", 100, 10, 30, "black")
         big_plot = AUV_F.big_plot()
+        
+        xval = [Sprites.slider("X:","white",200,display[1]-85,0,100,50),Sprites.slider("X:","white",700,display[1]-85,0,100,50)]
+        yval = [Sprites.slider("Y:","white",200,display[1]-85,0,100,50),Sprites.slider("Y:","white",700,display[1]-85,0,100,50)]
         while menue.location == "test":
             polling()
             screen.fill("white")
@@ -415,8 +422,10 @@ while running: # start of main code
                 data_flag = 1
                 data.plot = False
                 data.plot_data()
+                
                 while data_flag == 1:
                     polling()
+                    
                     data.get_pos_2(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
                     screen.fill("white")
                     screen.blit(xtext[0],xtext[1])
@@ -449,36 +458,55 @@ while running: # start of main code
                             if data.chosen[0][i] == 0 or data.chosen[0][i] == 1:
                                 data.x[i] = data.time_plot
                             else:
-                                pass
+                                
                                 data.x[i] = data.df[data.data[data.save[data.chosen[0][i]-2][0]][1][data.save[data.chosen[0][i]-2][1]]].tolist()
                             
                             if data.chosen[1][i] == 0:
                                 data.y[i] = data.time_plot
                             else:
                                 data.y[i] = data.df[data.data[data.save[data.chosen[1][i]-2][0]][1][data.save[data.chosen[1][i]-2][1]]].tolist()
-                        
+                                
+                    data.get_pos3(pygame.mouse.get_pos(),pygame.mouse.get_pressed()[0])
+                    
                     if data.a == 1:
                         for i in range(len(data.plot_text3)):
                             screen.blit(data.plot_text3[i][0],data.plot_text3[i][1])
                             
                     if data.b[1] == 1:
                         pygame.draw.line(screen, (0,0,0),(80+30*data.b[2],display[1]-18),(100+30*data.b[2],display[1]-18), width=3)
-                        print(data.df["altitudeAboveTerr"][0])
+                        #h
                     if data.b[0] == 1:
                         data.b[0] = 0
                         
                         big_plot.clear()
                         try:
                             big_plot.plot_fig.line(str(data.b), data.x[data.b[2]] , data.y[data.b[2]] ,color = (0,0,0))
+                            big_plot.plot_fig.set_xlim((data.chosen_setting[0][data.b[2]][0][2],data.chosen_setting[0][data.b[2]][1][2]))
+                            big_plot.plot_fig.set_ylim((data.chosen_setting[1][data.b[2]][0][2],data.chosen_setting[1][data.b[2]][1][2]))
                         except:
                             big_plot.error()
                         big_plot.uppdate()
-
                         
-                            
+                    #print(data.b)
+                    #print(data.chose)
+                    
 
-                                    
+                    
+                    
 
+                    
+                    if data.b[1] == 1:
+                        if data.chose == 1:
+                            xval[0].draw(data.chosen_setting[data.chose-1][data.b[2]][0][0],data.chosen_setting[data.chose-1][data.b[2]][0][1],data.chosen_setting[data.chose-1][data.b[2]][0][2])
+                            xval[1].draw(data.chosen_setting[data.chose-1][data.b[2]][1][0],data.chosen_setting[data.chose-1][data.b[2]][1][1],data.chosen_setting[data.chose-1][data.b[2]][1][2])
+                            screen.blit(xval[0].surface,xval[0].location)
+                            screen.blit(xval[1].surface,xval[1].location)
+                        elif data.chose == 2:
+                            yval[0].draw(data.chosen_setting[data.chose-1][data.b[2]][0][0],data.chosen_setting[data.chose-1][data.b[2]][0][1],data.chosen_setting[data.chose-1][data.b[2]][0][2])
+                            yval[1].draw(data.chosen_setting[data.chose-1][data.b[2]][1][0],data.chosen_setting[data.chose-1][data.b[2]][1][1],data.chosen_setting[data.chose-1][data.b[2]][1][2])
+                            screen.blit(yval[0].surface,yval[0].location)
+                            screen.blit(yval[1].surface,yval[1].location)
+                        
 
                     
                     screen.blit(big_plot.surface,(400,10))

@@ -702,12 +702,22 @@ class new_plot:
         print("plot initialising:",end=" ")
         self.display = display
         self.a = 0
-        self.b = [0,0]
+        self.b = [0,0,0]
         self.start_plot = 0
         self.chose = 0
         self.chosen = [[0,0,0],[0,0,0]]
+        self.chosen_setting = [[[[0,10,5],[5,20,10]],
+                                [[0,10,5],[5,20,10]],
+                                [[0,10,5],[5,20,10]]],
+                               
+                               [[[0,10,5],[5,20,10]],
+                                [[0,10,5],[5,20,10]],
+                                [[0,10,5],[5,20,10]]]]
+        self.plot_flag = 0
+        self.flag2 = 0
         self.x = [0,0,0]
         self.y = [0,0,0]
+        
         self.temp = 0
         self.time_plot = []
         self.plot_text = [1,text("plot chosen data", 430, display[1]-50, 30, "black"), text("plot chosen data", 430, display[1]-50, 30, "green")]
@@ -717,6 +727,8 @@ class new_plot:
             self.plot_text3.append(text(str(i+1), 80+30*i, display[1]-50, 30, "black"))
         self.flag = 0
         self.next = 0
+        self.pointer = 0
+        
         self.plot_update = 0
         self.update = 0
         self.min = 0
@@ -733,7 +745,7 @@ class new_plot:
         self.next_data = []
         self.plot = False
         self.data_to_plot = []
-        
+        self.raw_data_to_plot = []
         self.data_points()
         self.text()
         print("done")
@@ -818,10 +830,13 @@ class new_plot:
         
     def plot_data(self):
         self.data_to_plot = []
+        self.raw_data_to_plot = []
         self.chosen = [[0,0,0],[0,0,0]]
         self.data_to_plot.append([text("Time", 50, 60, 30, "black"),0,0,0])
         for i in range(len(self.save)):
             self.data_to_plot.append([text(self.data[self.save[i][0]][1][self.save[i][1]], 50, 110+50*i, 30, "black"),0,0,0])
+            self.raw_data_to_plot.append(self.data[self.save[i][0]][1][self.save[i][1]])
+        
             
     def get_pos_2(self,pos,click):
         if click == True:
@@ -834,6 +849,7 @@ class new_plot:
             if click == True and self.flag == 0:
                 self.flag = 1
                 self.start_plot = 1
+                self.find_range()
             
         else:
             self.plot_text2[0] = 1
@@ -867,14 +883,66 @@ class new_plot:
                         self.b = [1,1,i]
         if click == False:
             self.flag = 0
+            
+    def get_pos3(self,pos,click):
+        if self.b[1] == 1 and self.chose >0:
+            if 320<pos[0]<520and 735<pos[1]<785:
+                if click == True:
+                    self.flag2 = 1
+                    #print(self.chose) x or y
+                    #print(self.b) 1,2 or 3
+                    self.chosen_setting[self.chose-1][self.b[2]][0][2] = int(((self.chosen_setting[self.chose-1][self.b[2]][0][1]-self.chosen_setting[self.chose-1][self.b[2]][0][0])/100)*((pos[0]-320)/2)+self.chosen_setting[self.chose-1][self.b[2]][0][0])
+                    self.chosen_setting[self.chose-1][self.b[2]][1][0] = int(((self.chosen_setting[self.chose-1][self.b[2]][0][1]-self.chosen_setting[self.chose-1][self.b[2]][0][0])/100)*((pos[0]-320)/2)+self.chosen_setting[self.chose-1][self.b[2]][0][0])
                     
+            elif 820<pos[0]<1020 and 735<pos[1]<785:
+                if click == True:
+                    self.flag2 = 1
+                    self.chosen_setting[self.chose-1][self.b[2]][1][2] = int(((self.chosen_setting[self.chose-1][self.b[2]][1][1]-self.chosen_setting[self.chose-1][self.b[2]][1][0])/100)*((pos[0]-820)/2)+1+self.chosen_setting[self.chose-1][self.b[2]][1][0])
+                    self.chosen_setting[self.chose-1][self.b[2]][0][1] = int(((self.chosen_setting[self.chose-1][self.b[2]][1][1]-self.chosen_setting[self.chose-1][self.b[2]][1][0])/100)*((pos[0]-820)/2)+1+self.chosen_setting[self.chose-1][self.b[2]][1][0])
+                    
+            if self.flag2 == 1 and click == False:
+                self.flag2 = 0
+                self.b[0] = 1
+
+    def find_range(self):
+        self.myrange = [[[0,0],[0,0],[0,0]],[[0,0],[0,0],[0,0]]]
+        for i in range(len(self.chosen)):
+            for p in range(len(self.chosen[i])):
+                if self.chosen[i][p] <=1:
+                    self.myrange[i][p][0] = 0
+                    self.myrange[i][p][1] = self.time
+                else:
+                    temp = self.chosen[i][p]-2
+                    tempdata = self.df[self.raw_data_to_plot[temp]].tolist()
+                    tempmax = tempdata[0]
+                    tempmin = tempdata[0]
+                    for x in tempdata:
+                        
+                        if x < tempmin:
+                            tempmin = x
+                        elif x > tempmax:
+                            tempmax = x
+                            
+                    self.myrange[i][p][0] = int(tempmin)-10
+                    self.myrange[i][p][1] = int(tempmax)+10
+        
+        
+        for i in range(len(self.myrange)):
+            for p in range(len(self.myrange[i])):
+                self.chosen_setting[i][p] = [[self.myrange[i][p][0],self.myrange[i][p][1]-10,self.myrange[i][p][0]+10],[self.myrange[i][p][0]+10,self.myrange[i][p][1],self.myrange[i][p][1]-10]]
+        
+        
+                    
+            
+
+        
+            
 class big_plot:
     def __init__(self):
         self.flag = 0
         self.surface = pygame.Surface((700,700))
         self.surface.fill("white")
         self.plot_fig = pyc.Figure(self.surface, 0, 0, 700, 700)
-        
     def uppdate(self):
         self.surface.fill("white")
         try:
@@ -882,11 +950,9 @@ class big_plot:
             self.plot_fig.draw()
         except:
             self.error()
-            
-
-        
     def clear(self):
         self.surface.fill("white")
         self.plot_fig = pyc.Figure(self.surface, 0, 0, 700, 700)
     def error(self):
         self.surface.fill("red")
+        
